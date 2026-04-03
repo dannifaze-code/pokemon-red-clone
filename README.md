@@ -1,6 +1,6 @@
 # Pokémon Red Clone
 
-[![Play on GitHub Pages](https://img.shields.io/badge/Play%20Now-GitHub%20Pages-brightgreen?style=for-the-badge&logo=github)](https://dannifaze.github.io/pokemon-red-clone/)
+[![Play on GitHub Pages](https://img.shields.io/badge/Play%20Now-GitHub%20Pages-brightgreen?style=for-the-badge&logo=github)](https://dannifaze-code.github.io/pokemon-red-clone/)
 
 A browser-based clone of the classic Pokémon Red game, built with vanilla JavaScript and HTML5 Canvas. No downloads required - play directly in your browser!
 
@@ -17,7 +17,7 @@ A browser-based clone of the classic Pokémon Red game, built with vanilla JavaS
 ## Play Now
 
 ### Option 1: Play on GitHub Pages (Recommended)
-Click the **"Play Now"** button above or visit: **https://dannifaze.github.io/pokemon-red-clone/**
+Click the **"Play Now"** button above or visit: **https://dannifaze-code.github.io/pokemon-red-clone/**
 
 ### Option 2: Play Locally in Windsurf
 1. Open this project in Windsurf

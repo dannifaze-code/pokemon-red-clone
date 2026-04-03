@@ -1,5 +1,6 @@
 class BattleSystem {
-    constructor() {
+    constructor(game) {
+        this.game = game;
         this.active = false;
         this.playerPokemon = null;
         this.enemyPokemon = null;
@@ -98,8 +99,8 @@ class BattleSystem {
     
     end() {
         this.active = false;
-        game.state = 'world';
-        game.showDialog(`The wild ${this.enemyPokemon.name} ran away!`);
+        this.game.state = 'world';
+        this.game.showDialog(`The wild ${this.enemyPokemon.name} ran away!`);
     }
     
     render(ctx) {

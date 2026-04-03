@@ -26,7 +26,7 @@ class Game {
     init() {
         this.player = new Player(10, 8);
         this.map = new GameMap();
-        this.battle = new BattleSystem();
+        this.battle = new BattleSystem(this);
         
         this.setupEventListeners();
         this.gameLoop(0);

@@ -69,6 +69,13 @@ class Player {
         const y = pos.y;
         const size = this.TILE_SIZE;
         
+        // Walking animation bob - apply before drawing
+        ctx.save();
+        if (this.isMoving) {
+            const bob = Math.sin(this.moveProgress * Math.PI * 4) * 2;
+            ctx.translate(0, bob);
+        }
+        
         // Shadow
         ctx.fillStyle = 'rgba(0,0,0,0.3)';
         ctx.fillRect(x + 4, y + size - 4, size - 8, 4);
@@ -88,7 +95,7 @@ class Player {
         if (this.direction.x === 1) { // facing right
             ctx.fillRect(x + 14, y + 12, 2, 2);
         } else if (this.direction.x === -1) { // facing left
-            ctx.fillRect(x + 16, y + 12, 2, 2);
+            ctx.fillRect(x + 11, y + 12, 2, 2);
         } else { // facing up/down
             ctx.fillRect(x + 11, y + 12, 2, 2);
             ctx.fillRect(x + 19, y + 12, 2, 2);
@@ -113,10 +120,6 @@ class Player {
         ctx.fillRect(x + 4, y + 30, 10, 2);
         ctx.fillRect(x + 18, y + 30, 10, 2);
         
-        // Walking animation bob
-        if (this.isMoving) {
-            const bob = Math.sin(this.moveProgress * Math.PI * 4) * 2;
-            // Re-render with offset would be better, but this is simplified
-        }
+        ctx.restore();
     }
 }
