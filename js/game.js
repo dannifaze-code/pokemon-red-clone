@@ -364,15 +364,18 @@ class Game {
             this.map.height * this.TILE_SIZE - this.canvas.height,
             playerRenderPos.y - this.canvas.height / 2 + this.TILE_SIZE / 2
         ));
+
+        const snappedCameraX = Math.round(cameraX);
+        const snappedCameraY = Math.round(cameraY);
         
         this.ctx.save();
-        this.ctx.translate(-cameraX, -cameraY);
+        this.ctx.translate(-snappedCameraX, -snappedCameraY);
         
         // Apply screen shake
         this.graphics.applyScreenShake(this.ctx);
         
         // Render map with enhanced graphics
-        this.map.render(this.ctx, cameraX, cameraY, this.canvas.width, this.canvas.height, this.graphics);
+        this.map.render(this.ctx, snappedCameraX, snappedCameraY, this.canvas.width, this.canvas.height, this.graphics);
         
         // Render player with enhanced sprite
         this.graphics.drawPlayerSprite(
