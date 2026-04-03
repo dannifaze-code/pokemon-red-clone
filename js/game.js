@@ -340,9 +340,9 @@ class Game {
     
     update() {
         if (this.state === 'world' && !this.paused) {
-            this.processMovementInput();
             this.map.update();
             this.player.update(this.deltaTime);
+            this.processMovementInput();
             this.saveSystem.checkAutoSave();
             this.graphics.updateScreenShake(this.deltaTime);
         }
@@ -352,15 +352,17 @@ class Game {
         // Clear canvas
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        const playerRenderPos = this.player.getRenderPosition(alpha);
         
         // Calculate camera offset
         const cameraX = Math.max(0, Math.min(
             this.map.width * this.TILE_SIZE - this.canvas.width,
-            this.player.x * this.TILE_SIZE - this.canvas.width / 2 + this.TILE_SIZE / 2
+            playerRenderPos.x - this.canvas.width / 2 + this.TILE_SIZE / 2
         ));
         const cameraY = Math.max(0, Math.min(
             this.map.height * this.TILE_SIZE - this.canvas.height,
-            this.player.y * this.TILE_SIZE - this.canvas.height / 2 + this.TILE_SIZE / 2
+            playerRenderPos.y - this.canvas.height / 2 + this.TILE_SIZE / 2
         ));
         
         this.ctx.save();
@@ -371,8 +373,6 @@ class Game {
         
         // Render map with enhanced graphics
         this.map.render(this.ctx, cameraX, cameraY, this.canvas.width, this.canvas.height, this.graphics);
-
-        const playerRenderPos = this.player.getRenderPosition(alpha);
         
         // Render player with enhanced sprite
         this.graphics.drawPlayerSprite(

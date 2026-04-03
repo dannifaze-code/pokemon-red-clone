@@ -93,21 +93,19 @@ class GraphicsEngine {
         ctx.fillStyle = colors[0];
         ctx.fillRect(x, y, size, size);
         
-        // Grass texture
-        for (let i = 0; i < 5; i++) {
-            const gx = x + Math.random() * size;
-            const gy = y + Math.random() * size;
-            ctx.fillStyle = colors[1];
-            ctx.fillRect(gx, gy, 2, 2);
-        }
-        
-        // Highlight some blades
-        for (let i = 0; i < 3; i++) {
-            const gx = x + Math.random() * size;
-            const gy = y + Math.random() * size;
-            ctx.fillStyle = colors[2];
-            ctx.fillRect(gx, gy, 1, 3);
-        }
+        // Deterministic grass texture (stable across frames)
+        ctx.fillStyle = colors[1];
+        ctx.fillRect(x + 4, y + 6, 2, 2);
+        ctx.fillRect(x + 11, y + 15, 2, 2);
+        ctx.fillRect(x + 20, y + 9, 2, 2);
+        ctx.fillRect(x + 26, y + 21, 2, 2);
+        ctx.fillRect(x + 14, y + 26, 2, 2);
+
+        // Deterministic highlights
+        ctx.fillStyle = colors[2];
+        ctx.fillRect(x + 7, y + 10, 1, 3);
+        ctx.fillRect(x + 18, y + 5, 1, 3);
+        ctx.fillRect(x + 24, y + 17, 1, 3);
     }
     
     drawWaterTile(x, y, colors, ctx) {
@@ -139,13 +137,16 @@ class GraphicsEngine {
         ctx.fillStyle = colors[0];
         ctx.fillRect(x, y, size, size);
         
-        // Stone texture
-        for (let i = 0; i < 8; i++) {
-            const px = x + Math.random() * size;
-            const py = y + Math.random() * size;
-            ctx.fillStyle = colors[1];
-            ctx.fillRect(px, py, 3, 3);
-        }
+        // Deterministic stone texture (stable across frames)
+        ctx.fillStyle = colors[1];
+        ctx.fillRect(x + 3, y + 4, 3, 3);
+        ctx.fillRect(x + 12, y + 8, 3, 3);
+        ctx.fillRect(x + 22, y + 6, 3, 3);
+        ctx.fillRect(x + 6, y + 18, 3, 3);
+        ctx.fillRect(x + 16, y + 15, 3, 3);
+        ctx.fillRect(x + 25, y + 20, 3, 3);
+        ctx.fillRect(x + 10, y + 25, 3, 3);
+        ctx.fillRect(x + 20, y + 27, 3, 3);
         
         // Wear patterns
         ctx.fillStyle = colors[2];
@@ -222,8 +223,8 @@ class GraphicsEngine {
         ctx.ellipse(x + size/2, y + size - 4, size/3, size/6, 0, 0, Math.PI * 2);
         ctx.fill();
         
-        // Walking animation bob
-        const bob = player.isMoving ? Math.sin(player.moveProgress * Math.PI * 4) * 2 : 0;
+        // Keep vertical position stable to avoid hopping between tiles
+        const bob = 0;
         
         // Body layers
         // Legs
