@@ -392,20 +392,18 @@ class Inventory {
     useItem(itemId, targetPokemon) {
         const item = ITEM_DATABASE[itemId];
         if (!item || !this.hasItem(itemId)) return { success: false, message: 'No item' };
-        
-        const effect = item.effect;
-        if (!effect) return { success: false, message: 'No effect' };
+        if (!item.effect) return { success: false, message: 'No effect' };
         
         let result = { success: false, message: '' };
         
-        switch (effect.type) {
+        switch (item.effect.type) {
             case 'heal':
                 if (targetPokemon.isFainted) {
                     result = { success: false, message: `${targetPokemon.getName()} is fainted!` };
                 } else if (targetPokemon.currentHp >= targetPokemon.maxHp) {
                     result = { success: false, message: `${targetPokemon.getName()} is already at full HP!` };
                 } else {
-                    const healAmount = effect.amount === 'full' ? targetPokemon.maxHp : effect.amount;
+                    const healAmount = item.effect.amount === 'full' ? targetPokemon.maxHp : item.effect.amount;
                     const oldHp = targetPokemon.currentHp;
                     targetPokemon.heal(healAmount);
                     this.removeItem(itemId, 1);
@@ -422,7 +420,7 @@ class Inventory {
                     result = { success: false, message: `${targetPokemon.getName()} is fainted!` };
                 } else if (!targetPokemon.status) {
                     result = { success: false, message: `${targetPokemon.getName()} has no status condition!` };
-                } else if (effect.status === 'all' || targetPokemon.status === effect.status) {
+                } else if (item.effect.status === 'all' || targetPokemon.status === item.effect.status) {
                     const oldStatus = targetPokemon.status;
                     targetPokemon.status = null;
                     this.removeItem(itemId, 1);
@@ -440,7 +438,7 @@ class Inventory {
                     result = { success: false, message: `${targetPokemon.getName()} isn't fainted!` };
                 } else {
                     targetPokemon.isFainted = false;
-                    const healAmount = effect.hpPercent === 100 ? targetPokemon.maxHp : Math.floor(targetPokemon.maxHp * (effect.hpPercent / 100));
+                    const healAmount = item.effect.hpPercent === 100 ? targetPokemon.maxHp : Math.floor(targetPokemon.maxHp * (item.effect.hpPercent / 100));
                     targetPokemon.currentHp = healAmount;
                     this.removeItem(itemId, 1);
                     result = { 

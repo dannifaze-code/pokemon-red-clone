@@ -40,7 +40,7 @@ class BattleSystem {
         
         // Visual effects
         this.screenShake = 0;
-        this.flashEffect = null;
+        this.runAttempts = 0;
     }
     
     // Start a wild battle
@@ -80,8 +80,14 @@ class BattleSystem {
             return;
         }
         
+        // Mark enemy as seen in pokedex
+        if (this.enemyActive) {
+            this.game.registerPokedexEncounter(this.enemyActive.speciesId, false);
+        }
+        
         // Reset battle state
         this.turn = 0;
+        this.runAttempts = 0;
         this.battleState = 'intro';
         this.playerStatStages = { attack: 0, defense: 0, spAttack: 0, spDefense: 0, speed: 0, accuracy: 0, evasion: 0 };
         this.enemyStatStages = { attack: 0, defense: 0, spAttack: 0, spDefense: 0, speed: 0, accuracy: 0, evasion: 0 };
@@ -366,8 +372,8 @@ class BattleSystem {
         // Gen 1 run formula: A = player speed, B = enemy speed, C = attempts
         // F = (A * 128 / B) + 30 * C
         // If random(0-255) < F, escape
-        const runAttempts = 1; // Track actual attempts
-        const escapeOdds = (playerSpeed * 128 / enemySpeed) + 30 * runAttempts;
+        this.runAttempts++;
+        const escapeOdds = (playerSpeed * 128 / enemySpeed) + 30 * this.runAttempts;
         const roll = Math.random() * 256;
         
         if (roll < escapeOdds || playerSpeed > enemySpeed) {
@@ -433,7 +439,7 @@ class BattleSystem {
         if (action.user === 'player') {
             attacker.useMove(action.moveSlot);
         } else {
-            const moveIndex = attacker.moves.findIndex(m => m.id === move.name.toUpperCase().replace(/ /g, '_'));
+            const moveIndex = attacker.moves.findIndex(m => m.id === action.move.id);
             if (moveIndex >= 0) attacker.useMove(moveIndex);
         }
         
@@ -463,16 +469,14 @@ class BattleSystem {
         }
         
         // Calculate damage
-        const damage = this.calculateDamage(move, attacker, defender, attackerStages, defenderStages);
+        const { damage, isCrit } = this.calculateDamage(move, attacker, defender, attackerStages, defenderStages);
         
         // Apply damage
         if (damage > 0) {
             defender.takeDamage(damage);
             this.screenShake = 10;
             
-            // Check critical hit
-            const critChance = attacker.getCritRate() / 100;
-            const isCrit = Math.random() < critChance;
+            // Critical hit was already determined in calculateDamage
             if (isCrit) {
                 this.queueMessage('A critical hit!');
             }
@@ -577,11 +581,12 @@ class BattleSystem {
         
         // Critical hit (2x damage, 1.5x in later gens but keeping 2x for retro feel)
         const critChance = attacker.getCritRate() / 100;
-        if (Math.random() < critChance) {
+        const isCrit = Math.random() < critChance;
+        if (isCrit) {
             damage *= 2;
         }
         
-        return Math.max(1, damage);
+        return { damage: Math.max(1, damage), isCrit };
     }
     
     applyStatusEffect(move, attacker, defender, attackerStages, defenderStages) {
@@ -611,10 +616,11 @@ class BattleSystem {
     }
     
     calculateExpGain(defeatedPokemon) {
-        // Gen 1 EXP formula
+        // Gen 1 EXP formula - with Gen 6 XP Share behavior (full EXP to all)
         const a = defeatedPokemon.species.expYield;
         const L = defeatedPokemon.level;
-        const s = this.game.settings?.xpShare ? this.playerParty.length : 1;
+        // Gen 6+ XP Share: All party members get full EXP
+        const s = this.game.settings?.xpShare ? 1 : 1;
         
         return Math.floor((a * L) / (7 * s));
     }

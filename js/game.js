@@ -250,6 +250,26 @@ class Game {
         document.getElementById('dialog-box').classList.add('hidden');
     }
     
+    // Register Pokemon seen in pokedex
+    registerPokedexEncounter(speciesId, caught = false) {
+        if (!this.pokedex) {
+            this.pokedex = { seen: [], caught: [] };
+        }
+        
+        if (!this.pokedex.seen.includes(speciesId)) {
+            this.pokedex.seen.push(speciesId);
+        }
+        
+        if (caught && !this.pokedex.caught.includes(speciesId)) {
+            this.pokedex.caught.push(speciesId);
+        }
+    }
+    
+    // Register Pokemon caught in pokedex
+    registerPokedexCatch(speciesId) {
+        this.registerPokedexEncounter(speciesId, true);
+    }
+    
     startBattle() {
         const encounters = ['PIDGEY', 'RATTATA', 'CATERPIE'];
         const species = encounters[Math.floor(Math.random() * encounters.length)];
@@ -271,6 +291,7 @@ class Game {
         if (this.state === 'world' && !this.paused) {
             this.map.update();
             this.player.update(this.deltaTime);
+            this.saveSystem.checkAutoSave();
         }
     }
     

@@ -24,26 +24,11 @@ class Pokemon {
         // Current moves (max 4)
         this.moves = options.moves || this.generateStartingMoves();
         
-        // Current HP
-        this.currentHp = this.maxHp;
-        
-        // Status condition
-        this.status = null; // 'paralyze', 'burn', 'poison', 'sleep', 'freeze'
-        
-        // Held item
-        this.heldItem = options.heldItem || null;
-        
-        // Ability (modern feature)
-        this.ability = options.ability || null;
-        
-        // Whether this Pokemon is fainted (for Nuzlocke mode)
-        this.isFainted = false;
-        
-        // Whether this Pokemon has been caught (for tracking first catches)
-        this.isCaught = options.isCaught || false;
-        
         // Calculate initial stats
         this.recalculateStats();
+        
+        // Current HP (set AFTER recalculateStats sets maxHp)
+        this.currentHp = options.currentHp ?? this.maxHp;
     }
     
     generateIVs() {
@@ -160,7 +145,6 @@ class Pokemon {
     
     // Gain experience from battle
     gainExp(amount) {
-        // XP Share: If enabled, party members get 50% each
         const oldLevel = this.level;
         this.exp += amount;
         

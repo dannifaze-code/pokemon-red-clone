@@ -4,9 +4,13 @@ class Player {
         this.y = y;
         this.direction = { x: 0, y: -1 }; // facing up
         
+        this.name = 'RED';
+        this.badges = [];
+        
         this.isMoving = false;
         this.moveProgress = 0;
         this.moveSpeed = 0.15; // tiles per frame
+        this.targetFPS = 60; // reference frame rate
         this.moveFrom = { x: x, y: y };
         this.moveTo = { x: x, y: y };
         
@@ -40,7 +44,9 @@ class Player {
     
     update(deltaTime) {
         if (this.isMoving) {
-            this.moveProgress += this.moveSpeed;
+            // Frame-rate independent movement (60fps reference)
+            const frameTime = deltaTime / (1000 / this.targetFPS);
+            this.moveProgress += this.moveSpeed * frameTime;
             
             if (this.moveProgress >= 1) {
                 this.x = this.moveTo.x;
