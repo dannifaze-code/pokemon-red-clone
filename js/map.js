@@ -220,9 +220,5 @@ class GameMap {
                 break;
         }
         
-        // Grid lines (subtle)
-        ctx.strokeStyle = 'rgba(0,0,0,0.05)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x, y, size, size);
     }
 }
