@@ -9,10 +9,14 @@ class Player {
         
         this.isMoving = false;
         this.moveProgress = 0;
-        this.moveSpeed = 0.15; // tiles per frame
-        this.targetFPS = 60; // reference frame rate
+        this.moveDurationMs = 120; // per tile step
+        this.moveElapsedMs = 0;
         this.moveFrom = { x: x, y: y };
         this.moveTo = { x: x, y: y };
+
+        this.walkFrame = 0;
+        this.walkFrameTimer = 0;
+        this.walkFrameIntervalMs = 80;
         
         this.TILE_SIZE = 32;
         
@@ -27,7 +31,7 @@ class Player {
     }
     
     move(dx, dy, map) {
-        if (this.isMoving) return;
+        if (this.isMoving) return false;
         
         this.direction = { x: dx, y: dy };
         
@@ -37,23 +41,41 @@ class Player {
         if (map.isWalkable(targetX, targetY)) {
             this.isMoving = true;
             this.moveProgress = 0;
+            this.moveElapsedMs = 0;
             this.moveFrom = { x: this.x, y: this.y };
             this.moveTo = { x: targetX, y: targetY };
+            return true;
         }
+
+        this.walkFrame = 0;
+        return false;
+    }
+
+    canAcceptMovementInput() {
+        return !this.isMoving && this.moveProgress === 0;
     }
     
     update(deltaTime) {
         if (this.isMoving) {
-            // Frame-rate independent movement (60fps reference)
-            const frameTime = deltaTime / (1000 / this.targetFPS);
-            this.moveProgress += this.moveSpeed * frameTime;
+            this.moveElapsedMs += deltaTime;
+            this.moveProgress = Math.min(1, this.moveElapsedMs / this.moveDurationMs);
+
+            this.walkFrameTimer += deltaTime;
+            if (this.walkFrameTimer >= this.walkFrameIntervalMs) {
+                this.walkFrameTimer = 0;
+                this.walkFrame = (this.walkFrame + 1) % 4;
+            }
             
             if (this.moveProgress >= 1) {
                 this.x = this.moveTo.x;
                 this.y = this.moveTo.y;
                 this.isMoving = false;
                 this.moveProgress = 0;
+                this.moveElapsedMs = 0;
             }
+        } else {
+            this.walkFrame = 0;
+            this.walkFrameTimer = 0;
         }
     }
     

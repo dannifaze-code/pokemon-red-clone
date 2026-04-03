@@ -210,6 +210,11 @@ class GraphicsEngine {
     // Draw enhanced player sprite
     drawPlayerSprite(x, y, player, ctx, alpha = 0) {
         const size = 32;
+        const frame = player.isMoving ? player.walkFrame : 0;
+        const legSwing = frame % 2 === 0 ? -1 : 1;
+        const armSwing = -legSwing;
+        const facingVertical = player.direction.y !== 0;
+        const facingUp = player.direction.y < 0;
         
         // Shadow
         ctx.fillStyle = 'rgba(0,0,0,0.3)';
@@ -223,13 +228,13 @@ class GraphicsEngine {
         // Body layers
         // Legs
         ctx.fillStyle = '#2c3e50';
-        ctx.fillRect(x + 8, y + 24 + bob, 6, 8);
-        ctx.fillRect(x + 18, y + 24 + bob, 6, 8);
+        ctx.fillRect(x + 8 + legSwing, y + 24 + bob, 6, 8);
+        ctx.fillRect(x + 18 - legSwing, y + 24 + bob, 6, 8);
         
         // Shoes
         ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(x + 6, y + 30 + bob, 10, 2);
-        ctx.fillRect(x + 16, y + 30 + bob, 10, 2);
+        ctx.fillRect(x + 6 + legSwing, y + 30 + bob, 10, 2);
+        ctx.fillRect(x + 16 - legSwing, y + 30 + bob, 10, 2);
         
         // Torso
         ctx.fillStyle = '#4169e1';
@@ -237,8 +242,8 @@ class GraphicsEngine {
         
         // Arms
         ctx.fillStyle = '#f4c2a1';
-        ctx.fillRect(x + 2, y + 18 + bob, 6, 8);
-        ctx.fillRect(x + 24, y + 18 + bob, 6, 8);
+        ctx.fillRect(x + 2 + armSwing, y + 18 + bob, 6, 8);
+        ctx.fillRect(x + 24 - armSwing, y + 18 + bob, 6, 8);
         
         // Head
         ctx.fillStyle = '#f4c2a1';
@@ -255,7 +260,10 @@ class GraphicsEngine {
             ctx.fillRect(x + 16, y + 14 + bob, 2, 2);
         } else if (player.direction.x === -1) { // left
             ctx.fillRect(x + 14, y + 14 + bob, 2, 2);
-        } else { // up/down
+        } else if (facingVertical && facingUp) { // up
+            ctx.fillRect(x + 12, y + 13 + bob, 2, 2);
+            ctx.fillRect(x + 18, y + 13 + bob, 2, 2);
+        } else { // down
             ctx.fillRect(x + 12, y + 14 + bob, 2, 2);
             ctx.fillRect(x + 18, y + 14 + bob, 2, 2);
         }

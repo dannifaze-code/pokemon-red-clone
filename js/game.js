@@ -30,6 +30,9 @@ class Game {
         
         this.lastTime = 0;
         this.deltaTime = 0;
+
+        this.pressedDirections = new Set();
+        this.lastDirectionPressed = null;
     }
     
     init() {
@@ -78,6 +81,7 @@ class Game {
     
     setupEventListeners() {
         window.addEventListener('keydown', (e) => this.handleInput(e));
+        window.addEventListener('keyup', (e) => this.handleKeyUp(e));
     }
     
     handleInput(e) {
@@ -97,24 +101,15 @@ class Game {
             this.battle.handleInput(e.key);
             return;
         }
+
+        if (e.key.startsWith('Arrow')) {
+            e.preventDefault();
+            this.pressedDirections.add(e.key);
+            this.lastDirectionPressed = e.key;
+            return;
+        }
         
         switch(e.key) {
-            case 'ArrowUp':
-                e.preventDefault();
-                this.player.move(0, -1, this.map);
-                break;
-            case 'ArrowDown':
-                e.preventDefault();
-                this.player.move(0, 1, this.map);
-                break;
-            case 'ArrowLeft':
-                e.preventDefault();
-                this.player.move(-1, 0, this.map);
-                break;
-            case 'ArrowRight':
-                e.preventDefault();
-                this.player.move(1, 0, this.map);
-                break;
             case 'z':
             case ' ':
                 this.handleInteract();
@@ -123,6 +118,36 @@ class Game {
                 this.openMenu();
                 break;
         }
+    }
+
+    handleKeyUp(e) {
+        if (this.state !== 'world') return;
+        if (!e.key.startsWith('Arrow')) return;
+
+        this.pressedDirections.delete(e.key);
+        if (this.lastDirectionPressed === e.key) {
+            this.lastDirectionPressed = null;
+        }
+    }
+
+    processMovementInput() {
+        if (!this.player.canAcceptMovementInput()) return;
+        if (this.pressedDirections.size === 0) return;
+
+        let directionKey = this.lastDirectionPressed;
+        if (!directionKey || !this.pressedDirections.has(directionKey)) {
+            directionKey = Array.from(this.pressedDirections).at(-1);
+        }
+        if (!directionKey) return;
+
+        let dx = 0;
+        let dy = 0;
+        if (directionKey === 'ArrowUp') dy = -1;
+        else if (directionKey === 'ArrowDown') dy = 1;
+        else if (directionKey === 'ArrowLeft') dx = -1;
+        else if (directionKey === 'ArrowRight') dx = 1;
+
+        this.player.move(dx, dy, this.map);
     }
     
     handleMenuInput(e) {
@@ -315,6 +340,7 @@ class Game {
     
     update() {
         if (this.state === 'world' && !this.paused) {
+            this.processMovementInput();
             this.map.update();
             this.player.update(this.deltaTime);
             this.saveSystem.checkAutoSave();
@@ -345,11 +371,13 @@ class Game {
         
         // Render map with enhanced graphics
         this.map.render(this.ctx, cameraX, cameraY, this.canvas.width, this.canvas.height, this.graphics);
+
+        const playerRenderPos = this.player.getRenderPosition(alpha);
         
         // Render player with enhanced sprite
         this.graphics.drawPlayerSprite(
-            this.player.x * this.TILE_SIZE,
-            this.player.y * this.TILE_SIZE,
+            playerRenderPos.x,
+            playerRenderPos.y,
             this.player,
             this.ctx,
             alpha
