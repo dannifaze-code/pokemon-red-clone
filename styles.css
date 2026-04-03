@@ -1,0 +1,122 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #1a1a1a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Courier New', monospace;
+    color: #fff;
+}
+
+#game-container {
+    position: relative;
+    border: 4px solid #333;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+#gameCanvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+#ui-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+#dialog-box {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    background-color: #fff;
+    border: 4px solid #000;
+    border-radius: 8px;
+    padding: 20px;
+    color: #000;
+    font-size: 16px;
+    min-height: 100px;
+}
+
+#dialog-box::after {
+    content: '▼';
+    position: absolute;
+    bottom: 10px;
+    right: 20px;
+    animation: blink 1s infinite;
+}
+
+#menu {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: #fff;
+    border: 4px solid #000;
+    border-radius: 8px;
+    padding: 10px 0;
+    min-width: 150px;
+}
+
+#menu ul {
+    list-style: none;
+}
+
+#menu li {
+    padding: 10px 20px;
+    cursor: pointer;
+    color: #000;
+    transition: background-color 0.1s;
+}
+
+#menu li:hover,
+#menu li.selected {
+    background-color: #ff6b6b;
+    color: #fff;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#controls-info {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 14px;
+    color: #aaa;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+/* CRT effect overlay */
+#game-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%,
+        rgba(0, 0, 0, 0.1) 50%
+    );
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 10;
+}

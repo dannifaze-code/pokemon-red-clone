@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon Red Clone</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="640" height="576"></canvas>
+        <div id="ui-overlay">
+            <div id="dialog-box" class="hidden">
+                <p id="dialog-text"></p>
+            </div>
+            <div id="menu" class="hidden">
+                <ul>
+                    <li data-action="pokemon">POKéMON</li>
+                    <li data-action="bag">BAG</li>
+                    <li data-action="save">SAVE</li>
+                    <li data-action="exit">EXIT</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div id="controls-info">
+        <p><strong>Controls:</strong> Arrow Keys to move | Z/Space to interact | X to cancel/menu</p>
+    </div>
+    <script src="js/game.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/battle.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
