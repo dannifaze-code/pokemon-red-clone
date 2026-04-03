@@ -7,6 +7,34 @@ class GameMap {
         // Generate a simple Pallet Town-like map
         this.tiles = [];
         this.generateMap();
+
+        // NPC registry — maps "x,y" to story NPC IDs
+        this.npcRegistry = {
+            '20,12': 'rival_dray',
+            '10,15': 'townsperson_1',
+            '17,17': 'townsperson_2',
+            '22,20': 'veil_grunt',
+            '8,20':  'veil_commander'
+        };
+
+        // Sign registry — maps "x,y" to story sign IDs
+        this.signRegistry = {
+            '13,9':  'sign_fernvale',
+            '15,22': 'sign_mossgrove'
+        };
+
+        // Professor lab door faces tile below door
+        this.professorPos = { x: 15, y: 6 };
+
+        // Stamp NPC/sign tiles from registries
+        for (const key of Object.keys(this.npcRegistry)) {
+            const [nx, ny] = key.split(',').map(Number);
+            if (this.tiles[ny]) this.tiles[ny][nx] = 'npc';
+        }
+        for (const key of Object.keys(this.signRegistry)) {
+            const [sx, sy] = key.split(',').map(Number);
+            if (this.tiles[sy]) this.tiles[sy][sx] = 'sign';
+        }
     }
     
     generateMap() {
@@ -87,6 +115,18 @@ class GameMap {
         const tile = this.getTile(x, y);
         const walkable = ['grass', 'path', 'door'];
         return walkable.includes(tile);
+    }
+
+    getNpcAt(x, y) {
+        return this.npcRegistry[`${x},${y}`] || null;
+    }
+
+    getSignAt(x, y) {
+        return this.signRegistry[`${x},${y}`] || null;
+    }
+
+    isProfessorFacing(x, y) {
+        return x === this.professorPos.x && y === this.professorPos.y;
     }
     
     update() {

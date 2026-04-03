@@ -48,6 +48,10 @@ class Game {
         this.playTime = 0;
         this.pokedex = { seen: [], caught: [] };
         this.badges = [];
+        this.storyProgress = 0;
+        this.defeatedTrainers = [];
+        this.currentMap = 'fernvale';
+        this.mapStates = {};
         this.settings = {
             textSpeed: 'medium',
             battleAnimations: true,
@@ -59,6 +63,11 @@ class Game {
         };
         this.lastHealX = 10;
         this.lastHealY = 8;
+
+        // Multi-page dialog state
+        this.dialogPages = [];
+        this.dialogPageIndex = 0;
+        this.dialogCallback = null;
         
         this.startNewGame();
         this.setupEventListeners();
@@ -66,17 +75,28 @@ class Game {
     }
     
     startNewGame() {
-        // Starters
-        const starters = ['LEAFLING', 'EMBERL', 'AQUAFIN'];
+        this.storyProgress = 0;
+        this.player.name = PLAYER_NAME;
+
+        // Choose starter
+        const event = getStoryEvent(0);
+        const starters = event?.starterPool || ['LEAFLING', 'EMBERL', 'AQUAFIN'];
         const starter = starters[Math.floor(Math.random() * starters.length)];
         const starterPokemon = new Pokemon(starter, 5);
         this.party.push(starterPokemon);
-        
+
         // Starting items
-        this.inventory.addItem('POKE_BALL', 5);
-        this.inventory.addItem('POTION', 3);
-        
-        this.showDialog(`You received a ${starterPokemon.getName()}!`);
+        for (const item of (event?.items || [])) {
+            this.inventory.addItem(item.id, item.count);
+        }
+
+        // Play intro sequence then reveal starter
+        const introPages = [
+            ...INTRO_SEQUENCE,
+            `PROF. SOLEN: Take ${starterPokemon.getName()} with you.`,
+            `${starterPokemon.getName()} joined your party!`
+        ];
+        this.showDialogPages(introPages);
     }
     
     setupEventListeners() {
@@ -87,7 +107,7 @@ class Game {
     handleInput(e) {
         if (this.state === 'dialog') {
             if (e.key === 'z' || e.key === ' ' || e.key === 'Enter') {
-                this.closeDialog();
+                this.advanceDialog();
             }
             return;
         }
@@ -260,29 +280,137 @@ class Game {
     handleInteract() {
         const facingX = this.player.x + this.player.direction.x;
         const facingY = this.player.y + this.player.direction.y;
-        
         const tile = this.map.getTile(facingX, facingY);
+
         if (tile === 'npc') {
-            this.showDialog('Trainer: Hello! This is a work in progress!');
+            // Check professor lab door first
+            if (this.map.isProfessorFacing(facingX, facingY) || (facingX === 15 && facingY <= 6)) {
+                const lines = getDialog('professor', this.storyProgress);
+                this.showDialogPages(lines);
+                return;
+            }
+            const npcId = this.map.getNpcAt(facingX, facingY);
+            if (npcId) {
+                const lines = getDialog(npcId, this.storyProgress);
+                // Check if dialog triggers a battle
+                const lastLine = lines[lines.length - 1];
+                if (lastLine && lastLine.startsWith('[') && lastLine.includes('battle')) {
+                    const battleLines = lines.slice(0, -1);
+                    this.showDialogPages(battleLines, () => {
+                        this.triggerNpcBattle(npcId);
+                    });
+                } else {
+                    this.showDialogPages(lines);
+                }
+            } else {
+                this.showDialogPages(['...']);
+            }
         } else if (tile === 'sign') {
-            this.showDialog('Welcome to Pallet Town!\nThe journey begins here.');
+            const signId = this.map.getSignAt(facingX, facingY);
+            const lines = signId ? getDialog(signId, this.storyProgress) : ['...'];
+            this.showDialogPages(lines);
+        } else if (tile === 'door') {
+            // Entering prof lab
+            const lines = getDialog('professor', this.storyProgress);
+            this.showDialogPages(lines);
         } else if (tile === 'grass') {
-            if (Math.random() < 0.3) {
+            if (Math.random() < 0.4) {
                 this.startBattle();
             }
         }
     }
+
+    triggerNpcBattle(npcId) {
+        const event = getStoryEvent(this.storyProgress);
+        let battleData = event?.rivalBattle || event?.veilBattle || null;
+
+        if (!battleData) {
+            this.showDialogPages(['...No battle data found.']);
+            return;
+        }
+
+        if (this.defeatedTrainers.includes(`${npcId}_${this.storyProgress}`)) {
+            this.showDialogPages([`${battleData.name}: You already beat me. I remember.`]);
+            return;
+        }
+
+        const enemyParty = battleData.party.map(e => new Pokemon(e.species, e.level));
+        this.state = 'battle';
+        this.battle.startBattle(enemyParty, 'trainer', battleData.name);
+
+        // On battle end, record defeat and check story advance
+        const originalEnd = this.battle.end.bind(this.battle);
+        this.battle.end = () => {
+            originalEnd();
+            this.battle.end = originalEnd;
+            this.defeatedTrainers.push(`${npcId}_${this.storyProgress}`);
+            this.checkStoryAdvance(npcId);
+        };
+    }
+
+    checkStoryAdvance(trigger) {
+        const p = this.storyProgress;
+        if (trigger === 'rival_dray' && p === 2) this.advanceStory(3);
+        else if (trigger === 'veil_grunt' && p === 3) this.advanceStory(4);
+        else if (trigger === 'rival_dray' && p === 5) this.advanceStory(6);
+        else if (trigger === 'veil_commander' && p === 6) this.advanceStory(7);
+        else if (trigger === 'mira' && p === 8) this.advanceStory(9);
+    }
+
+    advanceStory(newProgress) {
+        this.storyProgress = newProgress;
+        const event = getStoryEvent(newProgress);
+        if (!event) return;
+
+        // Trigger memory dialog
+        if (event.memoryDialog) {
+            this.showDialogPages(event.memoryDialog);
+        }
+        // Trigger ending dialog
+        if (event.endingDialog) {
+            this.showDialogPages(event.endingDialog);
+        }
+    }
     
     showDialog(text) {
+        this.showDialogPages([text]);
+    }
+
+    showDialogPages(pages, callback = null) {
+        if (!pages || pages.length === 0) return;
         this.state = 'dialog';
+        this.dialogPages = pages;
+        this.dialogPageIndex = 0;
+        this.dialogCallback = callback || null;
+        this._renderDialogPage();
+    }
+
+    _renderDialogPage() {
+        const text = this.dialogPages[this.dialogPageIndex];
         const dialogBox = document.getElementById('dialog-box');
         const dialogText = document.getElementById('dialog-text');
         dialogText.textContent = text;
         dialogBox.classList.remove('hidden');
     }
-    
+
+    advanceDialog() {
+        this.dialogPageIndex++;
+        if (this.dialogPageIndex < this.dialogPages.length) {
+            this._renderDialogPage();
+        } else {
+            this.closeDialog();
+            if (this.dialogCallback) {
+                const cb = this.dialogCallback;
+                this.dialogCallback = null;
+                cb();
+            }
+        }
+    }
+
     closeDialog() {
         this.state = 'world';
+        this.dialogPages = [];
+        this.dialogPageIndex = 0;
         document.getElementById('dialog-box').classList.add('hidden');
     }
     
