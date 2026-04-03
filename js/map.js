@@ -93,12 +93,32 @@ class GameMap {
         // Animate water tiles or other animated elements
     }
     
-    render(ctx, cameraX, cameraY, viewWidth, viewHeight) {
-        const startX = Math.floor(cameraX / this.TILE_SIZE);
-        const startY = Math.floor(cameraY / this.TILE_SIZE);
+    render(ctx, offsetX, offsetY, viewWidth, viewHeight, graphics = null) {
+        // Calculate visible tile range
+        const startX = Math.floor(offsetX / this.TILE_SIZE);
+        const startY = Math.floor(offsetY / this.TILE_SIZE);
         const endX = Math.min(this.width, startX + Math.ceil(viewWidth / this.TILE_SIZE) + 1);
         const endY = Math.min(this.height, startY + Math.ceil(viewHeight / this.TILE_SIZE) + 1);
         
+        // Render visible tiles
+        for (let y = startY; y < endY; y++) {
+            for (let x = startX; x < endX; x++) {
+                const tile = this.getTile(x, y);
+                const screenX = x * this.TILE_SIZE;
+                const screenY = y * this.TILE_SIZE;
+                
+                if (graphics) {
+                    // Use enhanced graphics
+                    graphics.drawTile(screenX, screenY, tile, ctx);
+                } else {
+                    // Fallback to simple rendering
+                    this.drawSimpleTile(screenX, screenY, tile, ctx);
+                }
+            }
+        }
+    }
+    
+    drawSimpleTile(x, y, tile, ctx) {
         const colors = {
             grass: '#5a9a5a',
             path: '#a08060',
@@ -109,23 +129,15 @@ class GameMap {
             door: '#603020',
             sign: '#c0a060',
             npc: '#ff8080',
-            wall: '#000'
+            wall: '#404040'
         };
         
-        for (let y = startY; y < endY; y++) {
-            for (let x = startX; x < endX; x++) {
-                const tile = this.tiles[y][x];
-                const px = x * this.TILE_SIZE;
-                const py = y * this.TILE_SIZE;
-                
-                // Base tile
-                ctx.fillStyle = colors[tile] || colors.grass;
-                ctx.fillRect(px, py, this.TILE_SIZE, this.TILE_SIZE);
-                
-                // Add details based on tile type
-                this.renderTileDetails(ctx, tile, px, py);
-            }
-        }
+        // Base tile
+        ctx.fillStyle = colors[tile] || colors.grass;
+        ctx.fillRect(x, y, this.TILE_SIZE, this.TILE_SIZE);
+        
+        // Add details based on tile type
+        this.renderTileDetails(ctx, tile, x, y);
     }
     
     renderTileDetails(ctx, tile, x, y) {

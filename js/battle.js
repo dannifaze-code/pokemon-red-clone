@@ -379,7 +379,7 @@ class BattleSystem {
         if (roll < escapeOdds || playerSpeed > enemySpeed) {
             this.queueMessage('Got away safely!');
             this.battleState = 'end';
-            setTimeout(() => this.end(), 1500);
+            setTimeout(() => this.end(), 500); // Reduced delay from 1500ms to 500ms
         } else {
             this.queueMessage('Can\'t escape!');
             this.selectEnemyMove();

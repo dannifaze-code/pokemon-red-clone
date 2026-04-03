@@ -57,11 +57,12 @@ class Player {
         }
     }
     
-    getRenderPosition() {
+    getRenderPosition(alpha = 0) {
         if (!this.isMoving) {
             return { x: this.x * this.TILE_SIZE, y: this.y * this.TILE_SIZE };
         }
         
+        // Smooth interpolation between frames
         const t = this.moveProgress;
         const x = this.moveFrom.x + (this.moveTo.x - this.moveFrom.x) * t;
         const y = this.moveFrom.y + (this.moveTo.y - this.moveFrom.y) * t;
@@ -69,8 +70,8 @@ class Player {
         return { x: x * this.TILE_SIZE, y: y * this.TILE_SIZE };
     }
     
-    render(ctx) {
-        const pos = this.getRenderPosition();
+    render(ctx, alpha = 0) {
+        const pos = this.getRenderPosition(alpha);
         const x = pos.x;
         const y = pos.y;
         const size = this.TILE_SIZE;

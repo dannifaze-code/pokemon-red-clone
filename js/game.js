@@ -4,6 +4,15 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
         
+        // Graphics engine
+        this.graphics = new GraphicsEngine(this.canvas);
+        
+        // Frame rate control
+        this.targetFPS = 120;
+        this.frameInterval = 1000 / this.targetFPS;
+        this.lastFrameTime = 0;
+        this.accumulator = 0;
+        
         this.TILE_SIZE = 32;
         this.VIEW_WIDTH = 20;
         this.VIEW_HEIGHT = 18;
@@ -54,15 +63,17 @@ class Game {
     }
     
     startNewGame() {
-        const starters = ['BULBASAUR', 'CHARMANDER', 'SQUIRTLE'];
-        const choice = Math.floor(Math.random() * 3);
-        const starter = new Pokemon(starters[choice], 5);
-        this.party.push(starter);
+        // Starters
+        const starters = ['LEAFLING', 'EMBERL', 'AQUAFIN'];
+        const starter = starters[Math.floor(Math.random() * starters.length)];
+        const starterPokemon = new Pokemon(starter, 5);
+        this.party.push(starterPokemon);
         
-        this.inventory.addItem('POTION', 5);
+        // Starting items
         this.inventory.addItem('POKE_BALL', 5);
+        this.inventory.addItem('POTION', 3);
         
-        this.showDialog(`You received a ${starter.getName()}!`);
+        this.showDialog(`You received a ${starterPokemon.getName()}!`);
     }
     
     setupEventListeners() {
@@ -271,18 +282,33 @@ class Game {
     }
     
     startBattle() {
-        const encounters = ['PIDGEY', 'RATTATA', 'CATERPIE'];
+        const encounters = ['SKYWING', 'SCRATCHCLAW', 'SILKWORM'];
         const species = encounters[Math.floor(Math.random() * encounters.length)];
         this.state = 'battle';
         this.battle.startWildBattle(species);
     }
     
     gameLoop(timestamp) {
-        this.deltaTime = timestamp - this.lastTime;
-        this.lastTime = timestamp;
+        // Frame rate limiting
+        if (this.lastFrameTime === 0) {
+            this.lastFrameTime = timestamp;
+        }
         
-        this.update();
-        this.render();
+        const frameDelta = timestamp - this.lastFrameTime;
+        this.lastFrameTime = timestamp;
+        
+        // Accumulate time and update at fixed intervals
+        this.accumulator += frameDelta;
+        
+        while (this.accumulator >= this.frameInterval) {
+            this.deltaTime = this.frameInterval;
+            this.update();
+            this.accumulator -= this.frameInterval;
+        }
+        
+        // Always render with interpolation
+        const alpha = this.accumulator / this.frameInterval;
+        this.render(alpha);
         
         requestAnimationFrame((t) => this.gameLoop(t));
     }
@@ -292,10 +318,11 @@ class Game {
             this.map.update();
             this.player.update(this.deltaTime);
             this.saveSystem.checkAutoSave();
+            this.graphics.updateScreenShake(this.deltaTime);
         }
     }
     
-    render() {
+    render(alpha = 0) {
         // Clear canvas
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -313,13 +340,25 @@ class Game {
         this.ctx.save();
         this.ctx.translate(-cameraX, -cameraY);
         
-        // Render map
-        this.map.render(this.ctx, cameraX, cameraY, this.canvas.width, this.canvas.height);
+        // Apply screen shake
+        this.graphics.applyScreenShake(this.ctx);
         
-        // Render player
-        this.player.render(this.ctx);
+        // Render map with enhanced graphics
+        this.map.render(this.ctx, cameraX, cameraY, this.canvas.width, this.canvas.height, this.graphics);
+        
+        // Render player with enhanced sprite
+        this.graphics.drawPlayerSprite(
+            this.player.x * this.TILE_SIZE,
+            this.player.y * this.TILE_SIZE,
+            this.player,
+            this.ctx,
+            alpha
+        );
         
         this.ctx.restore();
+        
+        // Draw particles
+        this.graphics.drawParticles(this.ctx);
         
         // Render battle if active
         if (this.state === 'battle') {
