@@ -302,6 +302,21 @@ const MOVE_DATABASE = {
         target: MOVE_TARGET.SELF,
         healPercent: 50,
         description: 'Restores HP by half max HP.'
+    },
+    
+    // Psychic moves
+    PSYCHIC: {
+        name: 'PSYCHIC',
+        type: 'psychic',
+        category: DAMAGE_CATEGORY.SPECIAL,
+        power: 90,
+        accuracy: 100,
+        pp: 10,
+        maxPp: 10,
+        priority: 0,
+        target: MOVE_TARGET.ENEMY,
+        effect: { stat: 'spDefense', stages: -1, chance: 10 },
+        description: 'Strong psychic blast. May lower Sp. Def.'
     }
 };
 

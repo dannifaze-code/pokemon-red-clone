@@ -70,11 +70,18 @@ class Pokemon {
     generateStartingMoves() {
         const learnableMoves = getLearnableMoves(this.speciesId, this.level);
         // Take up to 4 most recent moves
-        return learnableMoves.slice(-4).map(moveId => ({
-            id: moveId,
-            pp: getMove(moveId)?.pp || 0,
-            maxPp: getMove(moveId)?.pp || 0
-        }));
+        return learnableMoves.slice(-4).map(moveId => {
+            const moveData = getMove(moveId);
+            if (!moveData) {
+                console.warn('Move not found:', moveId);
+                return { id: moveId, pp: 0, maxPp: 0 };
+            }
+            return {
+                id: moveId,
+                pp: moveData.pp || 0,
+                maxPp: moveData.pp || 0
+            };
+        }).filter(m => m.pp > 0 || getMove(m.id)); // Filter out invalid moves
     }
     
     calculateExpForLevel(level) {
