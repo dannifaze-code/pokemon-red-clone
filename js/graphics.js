@@ -81,6 +81,21 @@ class GraphicsEngine {
             case 'building':
                 this.drawBuildingTile(x, y, colors, ctx);
                 break;
+            case 'lab':
+                this.drawLabTile(x, y, ctx);
+                break;
+            case 'door':
+                this.drawDoorTile(x, y, ctx);
+                break;
+            case 'sign':
+                this.drawSignTile(x, y, ctx);
+                break;
+            case 'npc':
+                this.drawNpcTile(x, y, ctx);
+                break;
+            case 'wall':
+                this.drawWallTile(x, y, ctx);
+                break;
             default:
                 this.drawDefaultTile(x, y, colors, ctx);
         }
@@ -201,6 +216,66 @@ class GraphicsEngine {
         ctx.fillStyle = colors[1];
         ctx.fillRect(x + 2, y + 10, 2, 2);
         ctx.fillRect(x + 28, y + 10, 2, 2);
+    }
+
+    drawLabTile(x, y, ctx) {
+        const size = 32;
+        ctx.fillStyle = '#6f8fa8';
+        ctx.fillRect(x, y + 8, size, size - 8);
+        ctx.fillStyle = '#8fb7d6';
+        ctx.fillRect(x - 2, y + 4, size + 4, 8);
+        ctx.fillStyle = '#cfe7f7';
+        ctx.fillRect(x + 7, y + 14, 6, 6);
+        ctx.fillRect(x + 19, y + 14, 6, 6);
+        ctx.fillStyle = '#35506a';
+        ctx.fillRect(x + 12, y + 22, 8, 10);
+    }
+
+    drawDoorTile(x, y, ctx) {
+        const size = 32;
+        ctx.fillStyle = '#9f8163';
+        ctx.fillRect(x, y, size, size);
+        ctx.fillStyle = '#5f3d22';
+        ctx.fillRect(x + 8, y + 4, 16, 28);
+        ctx.fillStyle = '#2a1a0f';
+        ctx.fillRect(x + 20, y + 17, 2, 2);
+    }
+
+    drawSignTile(x, y, ctx) {
+        const size = 32;
+        ctx.fillStyle = '#5a9a5a';
+        ctx.fillRect(x, y, size, size);
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(x + 12, y + 16, 8, 16);
+        ctx.fillStyle = '#d4a060';
+        ctx.fillRect(x + 4, y + 4, 24, 14);
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(x + 6, y + 6, 20, 2);
+        ctx.fillRect(x + 6, y + 10, 20, 2);
+    }
+
+    drawNpcTile(x, y, ctx) {
+        const size = 32;
+        ctx.fillStyle = '#5a9a5a';
+        ctx.fillRect(x, y, size, size);
+
+        ctx.fillStyle = '#ff8080';
+        ctx.fillRect(x + 9, y + 9, 14, 14);
+        ctx.fillStyle = '#f4c2a1';
+        ctx.fillRect(x + 11, y + 11, 10, 8);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(x + 13, y + 13, 2, 2);
+        ctx.fillRect(x + 17, y + 13, 2, 2);
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillRect(x + 11, y + 19, 10, 4);
+    }
+
+    drawWallTile(x, y, ctx) {
+        ctx.fillStyle = '#3c3c3c';
+        ctx.fillRect(x, y, 32, 32);
+        ctx.fillStyle = '#4a4a4a';
+        ctx.fillRect(x + 2, y + 2, 28, 2);
+        ctx.fillRect(x + 2, y + 16, 28, 2);
     }
     
     drawDefaultTile(x, y, colors, ctx) {
