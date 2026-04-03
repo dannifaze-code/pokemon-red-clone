@@ -24,13 +24,6 @@ const TYPES = {
     FAIRY: 'fairy'
 };
 
-// Damage category for Physical/Special split per move
-const DAMAGE_CATEGORY = {
-    PHYSICAL: 'physical',
-    SPECIAL: 'special',
-    STATUS: 'status'
-};
-
 // Gen 1 Type Chart (with quirks preserved + modern types added)
 const TYPE_CHART = {
     [TYPES.NORMAL]: {
@@ -226,5 +219,5 @@ function isImmuneTo(attackingType, defendingType) {
 
 // Export for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { TYPES, DAMAGE_CATEGORY, TYPE_CHART, getEffectiveness, getStabMultiplier, isImmuneTo };
+    module.exports = { TYPES, TYPE_CHART, getEffectiveness, getStabMultiplier, isImmuneTo };
 }
