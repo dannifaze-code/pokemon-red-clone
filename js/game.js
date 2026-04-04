@@ -64,6 +64,8 @@ class Game {
         this.lastHealX = 75;
         this.lastHealY = 87;
 
+        this.stepsSinceEncounter = 0;  // cooldown between wild battles
+
         // Multi-page dialog state
         this.dialogPages = [];
         this.dialogPageIndex = 0;
@@ -558,7 +560,16 @@ class Game {
 
     checkStepEncounter() {
         const tile = this.map.getTile(this.player.x, this.player.y);
-        if (tile === 'tall_grass' && Math.random() < 0.25) {
+        if (tile !== 'tall_grass') {
+            return;
+        }
+
+        this.stepsSinceEncounter++;
+
+        // Require at least 3 steps in grass before another encounter can fire.
+        // Then each step has a ~10.9% chance (1-in-9.2 average, matching Gen 1).
+        if (this.stepsSinceEncounter >= 3 && Math.random() < 0.109) {
+            this.stepsSinceEncounter = 0;
             this.startBattle();
         }
     }
