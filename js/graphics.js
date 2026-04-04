@@ -483,17 +483,8 @@ class GraphicsEngine {
         const sheet = this.playerSpriteSheet;
         console.log('Preparing sprite frames, dimensions:', sheet.width, 'x', sheet.height);
         
-        const aspect = sheet.width / sheet.height;
-        console.log('Aspect ratio:', aspect);
-
-        // If it's a clean 1:1 sprite sheet, use direct mode
-        if (aspect > 0.95 && aspect < 1.05 && sheet.width >= 128) {
-            console.log('Using direct 4x4 mode');
-            this.playerSpriteMode = 'direct';
-            this.playerSpriteFrames = null;
-            return;
-        }
-
+        // Always use embedded extraction for screenshot-style sprite sheets
+        // This handles UI borders and extracts just the 4x4 character grid
         console.log('Using embedded extraction mode');
         this.playerSpriteMode = 'embedded';
         this.playerSpriteFrames = this.extractEmbeddedSpriteGrid(sheet);
@@ -501,16 +492,15 @@ class GraphicsEngine {
     }
 
     extractEmbeddedSpriteGrid(sheet) {
-        // Hardcoded coordinates based on typical Piskel screenshot layout
-        // These values work for ~500-600px wide Piskel export screenshots
+        // Hardcoded coordinates based on the actual 455x435 Piskel screenshot
+        // The 4x4 sprite grid is in the center-right portion
         console.log('Sprite sheet dimensions:', sheet.width, 'x', sheet.height);
         
-        // The 4x4 grid in Piskel screenshots typically starts at:
-        // x ≈ 35-40% from left, y ≈ 12-15% from top
-        // Each cell is typically 70-85px
-        const gridX = Math.floor(sheet.width * 0.34);  // ~170px on 500px image
-        const gridY = Math.floor(sheet.height * 0.12); // ~60px on 500px image
-        const cellSize = Math.floor(sheet.width * 0.16); // ~80px on 500px image
+        // For 455x435 image: grid starts around x=152, y=52, size=296x296
+        const gridX = 152;
+        const gridY = 52;
+        const gridSize = 296;
+        const cellSize = 74; // 296 / 4 = 74
         
         console.log('Grid extraction:', { gridX, gridY, cellSize });
 
