@@ -107,11 +107,26 @@ class Game {
     }
     
     handleInput(e, isKeyDown) {
-        if (this.state === 'title' || this.state === 'dialog' || this.state === 'menu' || this.battleSystem.active) {
+        if (this.state === 'title' || this.state === 'battle') {
             return;
         }
 
         const key = e.key.toLowerCase();
+
+        if (this.state === 'dialog') {
+            if (isKeyDown && (key === 'z' || key === ' ' || key === 'enter')) {
+                e.preventDefault();
+                this.advanceDialog();
+            }
+            return;
+        }
+
+        if (this.state === 'menu') {
+            if (isKeyDown) {
+                this.handleMenuInput(e);
+            }
+            return;
+        }
 
         const directionMap = {
             arrowup: 'ArrowUp',
@@ -145,6 +160,11 @@ class Game {
             case 'enter':
                 if (isKeyDown && !this.player.isMoving) {
                     this.handleInteract();
+                }
+                break;
+            case 'x':
+                if (isKeyDown) {
+                    this.openMenu();
                 }
                 break;
         }
