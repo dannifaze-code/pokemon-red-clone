@@ -492,18 +492,15 @@ class GraphicsEngine {
     }
 
     extractEmbeddedSpriteGrid(sheet) {
-        // Hardcoded coordinates based on the actual 455x435 Piskel screenshot
-        // The 4x4 sprite grid is on the right side of the image
+        // Based on user feedback, the previous coordinates were cropping the top/left of the sprites
         console.log('Sprite sheet dimensions:', sheet.width, 'x', sheet.height);
         
-        // Layout analysis:
-        // - Left panel (selected frame + preview): ~150px
-        // - Center palette strip: ~15px
-        // - Right panel (4x4 grid): ~290px starting around x=165
-        // Grid starts around x=165, y=55 with cell size ~72px
-        const gridX = 165;
-        const gridY = 55;
-        const cellSize = 72; // 288 / 4 = 72 for a ~288px grid
+        // Shifted significantly further left and up to capture the full sprite
+        // Previous (cropped head/left): gridX=150, gridY=45, cellSize=75
+        // New: Move to x=135, y=35, increase cell size to 80
+        const gridX = 135;
+        const gridY = 35;
+        const cellSize = 80;
         
         console.log('Grid extraction:', { gridX, gridY, cellSize });
 
@@ -529,26 +526,39 @@ class GraphicsEngine {
 
     extractSpriteFromCell(srcCtx, sx, sy, size) {
         // Extract just the inner sprite, ignoring UI borders
-        // The actual sprite is roughly in the center 70% of each cell
-        const padding = Math.floor(size * 0.15);
+        // Reduced padding to avoid cutting off sprite edges
+        const padding = Math.floor(size * 0.10);
         const spriteSize = size - (padding * 2);
         
         const cellData = srcCtx.getImageData(sx + padding, sy + padding, spriteSize, spriteSize);
         const data = cellData.data;
 
+        // Keep track of actual sprite bounds to center it properly
+        let minX = spriteSize, minY = spriteSize, maxX = 0, maxY = 0;
+
         // Make gray/white backgrounds transparent
-        for (let i = 0; i < data.length; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-            
-            // Detect and remove gray backgrounds (#808080 or similar)
-            const isGrayBg = (Math.abs(r - 128) < 40 && Math.abs(g - 128) < 40 && Math.abs(b - 128) < 40) ||
-                             (Math.abs(r - 192) < 30 && Math.abs(g - 192) < 30 && Math.abs(b - 192) < 30) ||
-                             (Math.abs(r - 255) < 20 && Math.abs(g - 255) < 20 && Math.abs(b - 255) < 20);
-            
-            if (isGrayBg) {
-                data[i + 3] = 0;
+        for (let y = 0; y < spriteSize; y++) {
+            for (let x = 0; x < spriteSize; x++) {
+                const i = (y * spriteSize + x) * 4;
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const a = data[i + 3];
+                
+                // Detect and remove gray backgrounds (#808080 or similar)
+                const isGrayBg = (Math.abs(r - 128) < 40 && Math.abs(g - 128) < 40 && Math.abs(b - 128) < 40) ||
+                                 (Math.abs(r - 192) < 30 && Math.abs(g - 192) < 30 && Math.abs(b - 192) < 30) ||
+                                 (Math.abs(r - 255) < 20 && Math.abs(g - 255) < 20 && Math.abs(b - 255) < 20);
+                
+                if (isGrayBg || a < 10) {
+                    data[i + 3] = 0;
+                } else {
+                    // Track bounds of the actual sprite pixels
+                    if (x < minX) minX = x;
+                    if (y < minY) minY = y;
+                    if (x > maxX) maxX = x;
+                    if (y > maxY) maxY = y;
+                }
             }
         }
 
@@ -559,14 +569,34 @@ class GraphicsEngine {
         const outCtx = out.getContext('2d');
         outCtx.imageSmoothingEnabled = false;
 
+        // If no sprite found, return empty
+        if (maxX < minX || maxY < minY) {
+            return out;
+        }
+
         // Put cleaned data
         const clean = document.createElement('canvas');
         clean.width = spriteSize;
         clean.height = spriteSize;
         clean.getContext('2d').putImageData(cellData, 0, 0);
 
-        // Scale to fit 32x32
-        outCtx.drawImage(clean, 0, 0, spriteSize, spriteSize, 0, 0, 32, 32);
+        // Calculate actual sprite dimensions
+        const actualW = maxX - minX + 1;
+        const actualH = maxY - minY + 1;
+
+        // Center and bottom-align the sprite in the 32x32 output
+        // We want the sprite to fit nicely within a ~26x30 area
+        const maxW = 26;
+        const maxH = 30;
+        const scale = Math.min(maxW / actualW, maxH / actualH, 1);
+        
+        const drawW = Math.floor(actualW * scale);
+        const drawH = Math.floor(actualH * scale);
+        
+        const dx = Math.floor((32 - drawW) / 2);
+        const dy = 32 - drawH - 1; // Bottom align
+
+        outCtx.drawImage(clean, minX, minY, actualW, actualH, dx, dy, drawW, drawH);
         return out;
     }
 
