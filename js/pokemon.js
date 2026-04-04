@@ -29,6 +29,7 @@ class Pokemon {
         
         // Current HP (set AFTER recalculateStats sets maxHp)
         this.currentHp = options.currentHp ?? this.maxHp;
+        this.isFainted = options.isFainted ?? false;
     }
     
     generateIVs() {
@@ -260,6 +261,7 @@ class Pokemon {
     fullHeal() {
         this.currentHp = this.maxHp;
         this.status = null;
+        this.isFainted = false;
     }
     
     // Restore PP for all moves
