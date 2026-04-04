@@ -107,7 +107,15 @@ class Game {
     }
     
     handleInput(e, isKeyDown) {
-        if (this.state === 'title' || this.state === 'battle') {
+        if (this.state === 'title') {
+            return;
+        }
+
+        if (this.state === 'battle') {
+            if (isKeyDown) {
+                e.preventDefault();
+                this.battle.handleInput(e.key);
+            }
             return;
         }
 
