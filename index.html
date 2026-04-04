@@ -12,14 +12,14 @@
             <div class="screen-card title-card">
                 <p class="title-kicker">Adventure Build</p>
                 <h1>POKéMON RED CLONE</h1>
-                <p class="title-subtitle">Start the current game build or open the imported world map generator.</p>
+                <p class="title-subtitle">Start the current game build or generate a brand new local overworld to play.</p>
                 <div class="title-actions">
                     <button id="start-game-button" class="retro-button primary" type="button">Play</button>
                     <button id="open-generator-button" class="retro-button" type="button">World Map Generator</button>
                 </div>
                 <div class="title-help">
                     <p>Press Play to enter the overworld.</p>
-                    <p>Press World Map Generator to open the imported tool in its own screen.</p>
+                    <p>Press World Map Generator to build and preview a local map before playing it.</p>
                 </div>
             </div>
         </section>
@@ -30,13 +30,65 @@
                     <button id="close-generator-button" class="retro-button" type="button">Back</button>
                     <div class="generator-copy">
                         <h2>World Map Generator</h2>
-                        <p>Loaded in an isolated screen so it does not interfere with the game runtime.</p>
+                        <p>Build a local overworld, preview it instantly, and play the generated map in-game.</p>
                     </div>
                 </div>
-                <div id="generator-status" class="generator-status">Loading generator...</div>
-                <div id="generator-error" class="generator-error hidden"></div>
-                <div class="generator-frame-shell">
-                    <iframe id="generator-frame" title="World Map Generator" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+                <div class="generator-layout">
+                    <div class="generator-controls-panel">
+                        <div class="generator-field">
+                            <label for="generator-seed">Seed</label>
+                            <div class="generator-inline-row">
+                                <input id="generator-seed" type="text" value="KANTO-RED" maxlength="32">
+                                <button id="randomize-seed-button" class="retro-button" type="button">Randomize</button>
+                            </div>
+                        </div>
+                        <div class="generator-grid-fields">
+                            <div class="generator-field">
+                                <label for="generator-biome">Biome</label>
+                                <select id="generator-biome">
+                                    <option value="temperate">Temperate</option>
+                                    <option value="forest">Forest</option>
+                                    <option value="swamp">Swamp</option>
+                                    <option value="volcanic">Volcanic</option>
+                                    <option value="coastal">Coastal</option>
+                                </select>
+                            </div>
+                            <div class="generator-field">
+                                <label for="generator-width">Width</label>
+                                <input id="generator-width" type="number" min="48" max="180" value="96">
+                            </div>
+                            <div class="generator-field">
+                                <label for="generator-height">Height</label>
+                                <input id="generator-height" type="number" min="36" max="140" value="72">
+                            </div>
+                            <div class="generator-field">
+                                <label for="generator-grass-density">Tall Grass</label>
+                                <select id="generator-grass-density">
+                                    <option value="low">Low</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </div>
+                            <div class="generator-field">
+                                <label for="generator-obstacle-density">Obstacles</label>
+                                <select id="generator-obstacle-density">
+                                    <option value="low">Low</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="high">High</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="generator-button-stack">
+                            <button id="generate-map-button" class="retro-button primary" type="button">Generate Map</button>
+                            <button id="play-generated-map-button" class="retro-button" type="button">Play Generated Map</button>
+                        </div>
+                        <div id="generator-status" class="generator-status">Choose a biome and generate a local map.</div>
+                        <div id="generator-error" class="generator-error hidden"></div>
+                    </div>
+                    <div class="generator-preview-panel">
+                        <canvas id="generator-preview" width="640" height="480"></canvas>
+                        <div id="generator-summary" class="generator-summary"></div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -84,6 +136,7 @@
     <script src="js/player.js"></script>
     <script src="js/map.js"></script>
     <script src="js/battle.js"></script>
+    <script src="js/local-map-generator.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>

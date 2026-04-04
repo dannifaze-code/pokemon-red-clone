@@ -1,9 +1,11 @@
 class Game {
-    constructor() {
+    constructor(options = {}) {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
         this.worldMapOverlay = document.getElementById('world-map-overlay');
+        this.generatedMapData = options.generatedMapData || null;
+        this.generatedWorldMapImage = options.generatedWorldMapImage || this.generatedMapData?.previewImage || null;
         
         // Graphics engine
         this.graphics = new GraphicsEngine(this.canvas);
@@ -37,8 +39,9 @@ class Game {
     }
     
     init() {
-        this.player = new Player(75, 87);
-        this.map = new GameMap();
+        this.map = new GameMap(this.generatedMapData);
+        const spawn = this.map.getSpawnPoint();
+        this.player = new Player(spawn.x, spawn.y);
         this.battle = new BattleSystem(this);
         this.saveSystem = new SaveSystem(this);
         
@@ -71,6 +74,8 @@ class Game {
         this.dialogPages = [];
         this.dialogPageIndex = 0;
         this.dialogCallback = null;
+
+        this.setWorldMapImage(this.generatedWorldMapImage || 'game%20world%20map/s2EarB.png');
         
         this.startNewGame();
         this.setupEventListeners();
@@ -79,6 +84,19 @@ class Game {
     
     startNewGame() {
         this.storyProgress = 0;
+        this.playTime = 0;
+        this.pokedex = { seen: [], caught: [] };
+        this.mapStates = {};
+        this.party = [];
+        this.inventory = new Inventory();
+        this.pcStorage = new PCStorage();
+        this.badges = [];
+        this.player.badges = [];
+        this.defeatedTrainers = [];
+        this.currentMap = this.generatedMapData ? 'generated' : 'fernvale';
+        this.stepsSinceEncounter = 0;
+        this.lastHealX = this.player.x;
+        this.lastHealY = this.player.y;
         this.player.name = PLAYER_NAME;
 
         // Choose starter
@@ -93,13 +111,47 @@ class Game {
             this.inventory.addItem(item.id, item.count);
         }
 
-        // Play intro sequence then reveal starter
-        const introPages = [
-            ...INTRO_SEQUENCE,
-            `PROF. SOLEN: Take ${starterPokemon.getName()} with you.`,
-            `${starterPokemon.getName()} joined your party!`
-        ];
+        const introPages = this.generatedMapData
+            ? [
+                `Map Ready: ${this.generatedMapData.mapName}`,
+                `${starterPokemon.getName()} joined your party!`,
+                'This generated region is ready to explore.'
+            ]
+            : [
+                ...INTRO_SEQUENCE,
+                `PROF. SOLEN: Take ${starterPokemon.getName()} with you.`,
+                `${starterPokemon.getName()} joined your party!`
+            ];
         this.showDialogPages(introPages);
+    }
+
+    setWorldMapImage(src) {
+        const worldMapImage = document.getElementById('world-map-image');
+        if (!worldMapImage) {
+            return;
+        }
+        worldMapImage.src = src || 'game%20world%20map/s2EarB.png';
+    }
+
+    loadGeneratedMap(generatedMapData) {
+        this.generatedMapData = generatedMapData || null;
+        this.generatedWorldMapImage = this.generatedMapData?.previewImage || null;
+        this.map = new GameMap(this.generatedMapData);
+        const spawn = this.map.getSpawnPoint();
+        this.player = new Player(spawn.x, spawn.y);
+        this.battle = new BattleSystem(this);
+        this.lastHealX = spawn.x;
+        this.lastHealY = spawn.y;
+        this.clearMovementInput();
+        this.closeMenu();
+        document.getElementById('dialog-box').classList.add('hidden');
+        this.dialogPages = [];
+        this.dialogPageIndex = 0;
+        this.dialogCallback = null;
+        this.worldMapOverlay.classList.add('hidden');
+        this.state = 'world';
+        this.setWorldMapImage(this.generatedWorldMapImage || 'game%20world%20map/s2EarB.png');
+        this.startNewGame();
     }
     
     setupEventListeners() {

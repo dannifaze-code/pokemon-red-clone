@@ -13,8 +13,16 @@ const ENCOUNTER_TABLES = {
 };
 
 class GameMap {
-    constructor() {
+    constructor(generatedMapData = null) {
         this.TILE_SIZE = 32;
+        this.generatedMapData = generatedMapData || null;
+        this.areaGrid = null;
+
+        if (this.generatedMapData) {
+            this.loadGeneratedMapData(this.generatedMapData);
+            return;
+        }
+
         this.width  = 150;
         this.height = 100;
 
@@ -74,6 +82,27 @@ class GameMap {
             '57,53': 'gym_sylva',  // fillBuilding(54,48,60,53,'gym',57) → door y=53
             '57,33': 'gym_cinder'  // fillBuilding(54,28,60,33,'gym',57) → door y=33
         };
+
+        this.applyRegistriesToTiles();
+    }
+
+    loadGeneratedMapData(data) {
+        this.width = data.width;
+        this.height = data.height;
+        this.tiles = data.tiles.map(row => [...row]);
+        this.areaGrid = data.areaGrid ? data.areaGrid.map(row => [...row]) : null;
+        this.generatedSpawn = data.spawn || { x: Math.floor(this.width / 2), y: Math.floor(this.height / 2) };
+        this.npcRegistry = {};
+        this.signRegistry = {};
+        this.professorPos = { x: -1, y: -1 };
+        this.healCenterDoors = new Set();
+        this.gymDoors = {};
+    }
+
+    applyRegistriesToTiles() {
+        if (!this.tiles.length) {
+            return;
+        }
 
         // Stamp NPC / sign tiles
         for (const key of Object.keys(this.npcRegistry)) {
@@ -387,7 +416,19 @@ class GameMap {
         return this.gymDoors[`${x},${y}`] || null;
     }
 
+    getSpawnPoint() {
+        return this.generatedSpawn || { x: 75, y: 87 };
+    }
+
     getAreaAt(x, y) {
+        if (this.areaGrid && this.areaGrid[y] && this.areaGrid[y][x]) {
+            return this.areaGrid[y][x];
+        }
+
+        if (this.generatedMapData?.encounterTableKey) {
+            return this.generatedMapData.encounterTableKey;
+        }
+
         if (y < 18) return 'summit_peak';
         if (y < 25) return 'ashfall_pass';
         if (y < 42) return 'cinderholm_area';
