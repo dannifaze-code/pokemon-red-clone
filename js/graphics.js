@@ -496,11 +496,11 @@ class GraphicsEngine {
         console.log('Sprite sheet dimensions:', sheet.width, 'x', sheet.height);
         
         // Shifted significantly further left and up to capture the full sprite
-        // Previous (cropped head/left): gridX=150, gridY=45, cellSize=75
-        // New: Move to x=135, y=35, increase cell size to 80
-        const gridX = 135;
-        const gridY = 35;
-        const cellSize = 80;
+        // Previous (cropped head/left): gridX=135, gridY=35, cellSize=80
+        // New: Move further left and up, increase cell size to ensure no clipping
+        const gridX = 120;
+        const gridY = 25;
+        const cellSize = 86;
         
         console.log('Grid extraction:', { gridX, gridY, cellSize });
 
@@ -525,9 +525,9 @@ class GraphicsEngine {
     }
 
     extractSpriteFromCell(srcCtx, sx, sy, size) {
-        // Extract just the inner sprite, ignoring UI borders
-        // Reduced padding to avoid cutting off sprite edges
-        const padding = Math.floor(size * 0.10);
+        // Extract inner sprite, ignoring UI borders
+        // Use a smaller padding to ensure we don't cut off wide sprites
+        const padding = Math.floor(size * 0.05);
         const spriteSize = size - (padding * 2);
         
         const cellData = srcCtx.getImageData(sx + padding, sy + padding, spriteSize, spriteSize);
@@ -550,7 +550,11 @@ class GraphicsEngine {
                                  (Math.abs(r - 192) < 30 && Math.abs(g - 192) < 30 && Math.abs(b - 192) < 30) ||
                                  (Math.abs(r - 255) < 20 && Math.abs(g - 255) < 20 && Math.abs(b - 255) < 20);
                 
-                if (isGrayBg || a < 10) {
+                // Also remove the dark UI grid lines (almost black but not quite)
+                const isGridLine = r < 40 && g < 40 && b < 40 && a > 200 && 
+                                   (x < 5 || x > spriteSize - 5 || y < 5 || y > spriteSize - 5);
+                
+                if (isGrayBg || a < 10 || isGridLine) {
                     data[i + 3] = 0;
                 } else {
                     // Track bounds of the actual sprite pixels
@@ -585,14 +589,14 @@ class GraphicsEngine {
         const actualH = maxY - minY + 1;
 
         // Center and bottom-align the sprite in the 32x32 output
-        // We want the sprite to fit nicely within a ~26x30 area
-        const maxW = 26;
+        const maxW = 28;
         const maxH = 30;
         const scale = Math.min(maxW / actualW, maxH / actualH, 1);
         
         const drawW = Math.floor(actualW * scale);
         const drawH = Math.floor(actualH * scale);
         
+        // Ensure perfectly centered horizontally
         const dx = Math.floor((32 - drawW) / 2);
         const dy = 32 - drawH - 1; // Bottom align
 
