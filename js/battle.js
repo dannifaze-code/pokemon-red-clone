@@ -680,7 +680,10 @@ class BattleSystem {
             this.awardExperience();
         }
         
-        this.game.state = 'world';
+        // Only return to world if a dialog hasn't already taken over state
+        if (this.game.state !== 'dialog') {
+            this.game.state = 'world';
+        }
 
         // Clear any held movement keys so the player doesn't get stuck walking
         this.game.pressedDirections.clear();

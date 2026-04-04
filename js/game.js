@@ -560,9 +560,10 @@ class Game {
 
     checkStepEncounter() {
         const tile = this.map.getTile(this.player.x, this.player.y);
-        if (tile !== 'tall_grass') {
-            return;
-        }
+        if (tile !== 'tall_grass') return;
+
+        // Never trigger if the entire party is fainted
+        if (!this.party.some(p => !p.isFainted)) return;
 
         this.stepsSinceEncounter++;
 
