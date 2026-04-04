@@ -494,13 +494,7 @@ class GraphicsEngine {
     }
 
     extractEmbeddedSpriteGrid(sheet) {
-        const gridX = Math.floor(sheet.width * 0.27);
-        const gridY = Math.floor(sheet.height * 0.03);
-        const gridW = Math.floor(sheet.width * 0.665);
-        const gridH = Math.floor(sheet.height * 0.855);
-        const cellW = Math.floor(gridW / 4);
-        const cellH = Math.floor(gridH / 4);
-
+        // Create full-size canvas to analyze the sheet
         const srcCanvas = document.createElement('canvas');
         srcCanvas.width = sheet.width;
         srcCanvas.height = sheet.height;
@@ -508,81 +502,107 @@ class GraphicsEngine {
         srcCtx.imageSmoothingEnabled = false;
         srcCtx.drawImage(sheet, 0, 0);
 
+        // Based on the Piskel screenshot layout:
+        // The 4x4 sprite grid is roughly centered, each cell ~32-40px
+        // Grid appears at approximately: x=180, y=70, size=320x320
+        const scale = Math.min(sheet.width, sheet.height) / 512;
+        const gridX = Math.floor(170 * scale);
+        const gridY = Math.floor(60 * scale);
+        const gridSize = Math.floor(320 * scale);
+        const cellSize = Math.floor(gridSize / 4);
+
         const frames = [];
         for (let row = 0; row < 4; row++) {
             const frameRow = [];
             for (let col = 0; col < 4; col++) {
-                const sx = gridX + col * cellW;
-                const sy = gridY + row * cellH;
-                frameRow.push(this.extractFrameFromCell(srcCtx, sx, sy, cellW, cellH));
+                const sx = gridX + col * cellSize;
+                const sy = gridY + row * cellSize;
+                frameRow.push(this.extractSpriteFrame(srcCtx, sx, sy, cellSize));
             }
             frames.push(frameRow);
         }
-
         return frames;
     }
 
-    extractFrameFromCell(srcCtx, sx, sy, sw, sh) {
-        const cellData = srcCtx.getImageData(sx, sy, sw, sh);
+    extractSpriteFrame(srcCtx, sx, sy, cellSize) {
+        // Get cell data
+        const cellData = srcCtx.getImageData(sx, sy, cellSize, cellSize);
         const data = cellData.data;
 
-        const bgR = data[0];
-        const bgG = data[1];
-        const bgB = data[2];
+        // Find non-background pixels
+        // Background in Piskel is typically gray (#808080) or checkerboard
+        let minX = cellSize, minY = cellSize, maxX = 0, maxY = 0;
+        const bgThreshold = 50; // How different from gray background
 
-        let minX = sw;
-        let minY = sh;
-        let maxX = -1;
-        let maxY = -1;
-
-        for (let y = 0; y < sh; y++) {
-            for (let x = 0; x < sw; x++) {
-                const i = (y * sw + x) * 4;
+        for (let y = 0; y < cellSize; y++) {
+            for (let x = 0; x < cellSize; x++) {
+                const i = (y * cellSize + x) * 4;
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
                 const a = data[i + 3];
-                if (a === 0) continue;
 
-                const dr = Math.abs(data[i] - bgR);
-                const dg = Math.abs(data[i + 1] - bgG);
-                const db = Math.abs(data[i + 2] - bgB);
-                const dist = dr + dg + db;
+                // Skip fully transparent
+                if (a < 10) continue;
 
-                if (dist < 42) {
+                // Check if pixel is part of sprite (not gray background)
+                // Piskel uses ~#808080 (128,128,128) as transparent bg
+                const isBg = Math.abs(r - 128) < bgThreshold &&
+                             Math.abs(g - 128) < bgThreshold &&
+                             Math.abs(b - 128) < bgThreshold;
+
+                if (!isBg) {
+                    // Keep this pixel, mark as opaque
+                    if (x < minX) minX = x;
+                    if (y < minY) minY = y;
+                    if (x > maxX) maxX = x;
+                    if (y > maxY) maxY = y;
+                } else {
+                    // Make background transparent
                     data[i + 3] = 0;
-                    continue;
                 }
-
-                if (x < minX) minX = x;
-                if (y < minY) minY = y;
-                if (x > maxX) maxX = x;
-                if (y > maxY) maxY = y;
             }
         }
 
-        const cleanedCanvas = document.createElement('canvas');
-        cleanedCanvas.width = sw;
-        cleanedCanvas.height = sh;
-        const cleanedCtx = cleanedCanvas.getContext('2d');
-        cleanedCtx.putImageData(cellData, 0, 0);
-
+        // Create output canvas (32x32 standard size)
         const out = document.createElement('canvas');
         out.width = 32;
         out.height = 32;
         const outCtx = out.getContext('2d');
         outCtx.imageSmoothingEnabled = false;
 
+        // If no sprite found, return empty
         if (maxX < minX || maxY < minY) {
             return out;
         }
 
-        const trimW = maxX - minX + 1;
-        const trimH = maxY - minY + 1;
-        const scale = Math.min(26 / trimW, 30 / trimH);
-        const drawW = Math.max(1, Math.round(trimW * scale));
-        const drawH = Math.max(1, Math.round(trimH * scale));
-        const dx = Math.floor((32 - drawW) / 2);
-        const dy = 32 - drawH;
+        // Put cleaned data back
+        const cleanCanvas = document.createElement('canvas');
+        cleanCanvas.width = cellSize;
+        cleanCanvas.height = cellSize;
+        cleanCanvas.getContext('2d').putImageData(cellData, 0, 0);
 
-        outCtx.drawImage(cleanedCanvas, minX, minY, trimW, trimH, dx, dy, drawW, drawH);
+        // Calculate sprite bounds with padding
+        const pad = 1;
+        minX = Math.max(0, minX - pad);
+        minY = Math.max(0, minY - pad);
+        maxX = Math.min(cellSize - 1, maxX + pad);
+        maxY = Math.min(cellSize - 1, maxY + pad);
+
+        const spriteW = maxX - minX + 1;
+        const spriteH = maxY - minY + 1;
+
+        // Scale to fit 32x32 nicely
+        const maxDisplay = 30;
+        const scale = Math.min(maxDisplay / spriteW, maxDisplay / spriteH, 1);
+        const drawW = Math.floor(spriteW * scale);
+        const drawH = Math.floor(spriteH * scale);
+
+        // Center in output
+        const dx = Math.floor((32 - drawW) / 2);
+        const dy = 32 - drawH - 1; // Bottom-aligned with small margin
+
+        outCtx.drawImage(cleanCanvas, minX, minY, spriteW, spriteH, dx, dy, drawW, drawH);
         return out;
     }
 
