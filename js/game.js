@@ -3,6 +3,7 @@ class Game {
         this.canvas = document.getElementById('gameCanvas');
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
+        this.worldMapOverlay = document.getElementById('world-map-overlay');
         
         // Graphics engine
         this.graphics = new GraphicsEngine(this.canvas);
@@ -17,7 +18,7 @@ class Game {
         this.VIEW_WIDTH = 20;
         this.VIEW_HEIGHT = 18;
         
-        this.state = 'world'; // world, battle, dialog, menu
+        this.state = 'world'; // world, battle, dialog, menu, world_map
         this.paused = false;
         
         this.colors = {
@@ -121,6 +122,14 @@ class Game {
 
         const key = e.key.toLowerCase();
 
+        if (this.state === 'world_map') {
+            if (isKeyDown && (key === 'm' || key === 'x' || key === 'escape')) {
+                e.preventDefault();
+                this.closeWorldMap();
+            }
+            return;
+        }
+
         if (this.state === 'dialog') {
             if (isKeyDown && (key === 'z' || key === ' ' || key === 'enter')) {
                 e.preventDefault();
@@ -175,6 +184,12 @@ class Game {
                     this.openMenu();
                 }
                 break;
+            case 'm':
+                if (isKeyDown) {
+                    e.preventDefault();
+                    this.openWorldMap();
+                }
+                break;
         }
     }
     
@@ -206,6 +221,11 @@ class Game {
         else if (directionKey === 'ArrowRight') dx = 1;
 
         this.player.move(dx, dy, this.map);
+    }
+
+    clearMovementInput() {
+        this.pressedDirections.clear();
+        this.lastDirectionPressed = null;
     }
     
     handleMenuInput(e) {
@@ -242,13 +262,35 @@ class Game {
     
     openMenu() {
         this.state = 'menu';
+        this.clearMovementInput();
         const menu = document.getElementById('menu');
+        const items = menu.querySelectorAll('li');
+        items.forEach(item => item.classList.remove('selected'));
+        if (items.length > 0) {
+            items[0].classList.add('selected');
+        }
         menu.classList.remove('hidden');
     }
     
     closeMenu() {
-        this.state = 'world';
+        if (this.state === 'menu') {
+            this.state = 'world';
+        }
         document.getElementById('menu').classList.add('hidden');
+    }
+
+    openWorldMap() {
+        if (this.state !== 'world') return;
+        this.clearMovementInput();
+        this.state = 'world_map';
+        this.worldMapOverlay.classList.remove('hidden');
+    }
+
+    closeWorldMap() {
+        if (this.state !== 'world_map') return;
+        this.clearMovementInput();
+        this.state = 'world';
+        this.worldMapOverlay.classList.add('hidden');
     }
     
     executeMenuAction(action) {

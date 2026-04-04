@@ -7,24 +7,70 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="game-container">
-        <canvas id="gameCanvas" width="640" height="576"></canvas>
-        <div id="ui-overlay">
-            <div id="dialog-box" class="hidden">
-                <p id="dialog-text"></p>
+    <div id="app-shell">
+        <section id="title-screen" class="app-screen">
+            <div class="screen-card title-card">
+                <p class="title-kicker">Adventure Build</p>
+                <h1>POKéMON RED CLONE</h1>
+                <p class="title-subtitle">Start the current game build or open the imported world map generator.</p>
+                <div class="title-actions">
+                    <button id="start-game-button" class="retro-button primary" type="button">Play</button>
+                    <button id="open-generator-button" class="retro-button" type="button">World Map Generator</button>
+                </div>
+                <div class="title-help">
+                    <p>Press Play to enter the overworld.</p>
+                    <p>Press World Map Generator to open the imported tool in its own screen.</p>
+                </div>
             </div>
-            <div id="menu" class="hidden">
-                <ul>
-                    <li data-action="pokemon">POKéMON</li>
-                    <li data-action="bag">BAG</li>
-                    <li data-action="save">SAVE</li>
-                    <li data-action="exit">EXIT</li>
-                </ul>
+        </section>
+
+        <section id="generator-screen" class="app-screen hidden">
+            <div class="screen-card generator-card">
+                <div class="generator-toolbar">
+                    <button id="close-generator-button" class="retro-button" type="button">Back</button>
+                    <div class="generator-copy">
+                        <h2>World Map Generator</h2>
+                        <p>Loaded in an isolated screen so it does not interfere with the game runtime.</p>
+                    </div>
+                </div>
+                <div id="generator-status" class="generator-status">Loading generator...</div>
+                <div id="generator-error" class="generator-error hidden"></div>
+                <div class="generator-frame-shell">
+                    <iframe id="generator-frame" title="World Map Generator" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+                </div>
             </div>
-        </div>
-    </div>
-    <div id="controls-info">
-        <p><strong>Controls:</strong> Arrow Keys to move | Z/Space to interact | X to cancel/menu</p>
+        </section>
+
+        <section id="game-screen" class="app-screen hidden">
+            <div id="game-container">
+                <canvas id="gameCanvas" width="640" height="576"></canvas>
+                <div id="ui-overlay">
+                    <div id="dialog-box" class="hidden">
+                        <p id="dialog-text"></p>
+                    </div>
+                    <div id="menu" class="hidden">
+                        <ul>
+                            <li data-action="pokemon">POKéMON</li>
+                            <li data-action="bag">BAG</li>
+                            <li data-action="save">SAVE</li>
+                            <li data-action="exit">EXIT</li>
+                        </ul>
+                    </div>
+                    <div id="world-map-overlay" class="hidden">
+                        <div class="world-map-panel">
+                            <div class="world-map-header">
+                                <span>WORLD MAP</span>
+                                <span>Press M, X, or Esc to close</span>
+                            </div>
+                            <img id="world-map-image" src="game%20world%20map/s2EarB.png" alt="Game world map">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="controls-info">
+                <p><strong>Controls:</strong> Arrow Keys to move | Z/Space to interact | X to cancel/menu | M to open the world map</p>
+            </div>
+        </section>
     </div>
     <script src="js/types.js"></script>
     <script src="js/moves.js"></script>
