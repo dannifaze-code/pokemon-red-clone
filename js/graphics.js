@@ -30,6 +30,17 @@ class GraphicsEngine {
         this.timeOfDay = 'day';
         this.particles = [];
         this.screenShake = { x: 0, y: 0, duration: 0 };
+
+        this.playerSpriteSheet = new Image();
+        this.playerSpriteLoaded = false;
+        this.playerSpriteFailed = false;
+        this.playerSpriteSheet.src = 'assets/mainplayablespriteset.png';
+        this.playerSpriteSheet.onload = () => {
+            this.playerSpriteLoaded = true;
+        };
+        this.playerSpriteSheet.onerror = () => {
+            this.playerSpriteFailed = true;
+        };
     }
     
     // Set time of day for ambient lighting
@@ -437,68 +448,86 @@ class GraphicsEngine {
         ctx.fillRect(x + 28, y + 14, 2, 2);
     }
     
-    // Draw enhanced player sprite
+    // Draw player sprite from sheet (fallback to procedural while loading/error)
     drawPlayerSprite(x, y, player, ctx, alpha = 0) {
+        const destSize = 32;
+
+        if (!this.playerSpriteLoaded || this.playerSpriteFailed) {
+            this.drawProceduralPlayerSprite(x, y, player, ctx);
+            return;
+        }
+
+        const sheet = this.playerSpriteSheet;
+        const frameW = Math.floor(sheet.width / 4);
+        const frameH = Math.floor(sheet.height / 4);
+        const frameCol = player.isMoving ? (player.walkFrame % 4) : 0;
+        const frameRow = this.getPlayerSpriteRow(player.direction);
+        const srcX = frameCol * frameW;
+        const srcY = frameRow * frameH;
+
+        const prevSmoothing = ctx.imageSmoothingEnabled;
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(sheet, srcX, srcY, frameW, frameH, x, y, destSize, destSize);
+        ctx.imageSmoothingEnabled = prevSmoothing;
+    }
+
+    getPlayerSpriteRow(direction) {
+        if (direction.x > 0) return 3;
+        if (direction.x < 0) return 2;
+        if (direction.y < 0) return 1;
+        return 0;
+    }
+
+    drawProceduralPlayerSprite(x, y, player, ctx) {
         const size = 32;
         const frame = player.isMoving ? player.walkFrame : 0;
         const legSwing = frame % 2 === 0 ? -1 : 1;
         const armSwing = -legSwing;
         const facingVertical = player.direction.y !== 0;
         const facingUp = player.direction.y < 0;
-        
-        // Shadow
+
         ctx.fillStyle = 'rgba(0,0,0,0.3)';
         ctx.beginPath();
         ctx.ellipse(x + size/2, y + size - 4, size/3, size/6, 0, 0, Math.PI * 2);
         ctx.fill();
-        
-        // Keep vertical position stable to avoid hopping between tiles
+
         const bob = 0;
-        
-        // Body layers
-        // Legs
+
         ctx.fillStyle = '#2c3e50';
         ctx.fillRect(x + 8 + legSwing, y + 24 + bob, 6, 8);
         ctx.fillRect(x + 18 - legSwing, y + 24 + bob, 6, 8);
-        
-        // Shoes
+
         ctx.fillStyle = '#1a1a1a';
         ctx.fillRect(x + 6 + legSwing, y + 30 + bob, 10, 2);
         ctx.fillRect(x + 16 - legSwing, y + 30 + bob, 10, 2);
-        
-        // Torso
+
         ctx.fillStyle = '#4169e1';
         ctx.fillRect(x + 6, y + 16 + bob, 20, 10);
-        
-        // Arms
+
         ctx.fillStyle = '#f4c2a1';
         ctx.fillRect(x + 2 + armSwing, y + 18 + bob, 6, 8);
         ctx.fillRect(x + 24 - armSwing, y + 18 + bob, 6, 8);
-        
-        // Head
+
         ctx.fillStyle = '#f4c2a1';
         ctx.fillRect(x + 8, y + 10 + bob, 16, 10);
-        
-        // Hat
+
         ctx.fillStyle = '#ff6b6b';
         ctx.fillRect(x + 6, y + 6 + bob, 20, 6);
         ctx.fillRect(x + 4, y + 10 + bob, 24, 4);
-        
-        // Eyes based on direction
+
         ctx.fillStyle = '#000';
-        if (player.direction.x === 1) { // right
+        if (player.direction.x === 1) {
             ctx.fillRect(x + 16, y + 14 + bob, 2, 2);
-        } else if (player.direction.x === -1) { // left
+        } else if (player.direction.x === -1) {
             ctx.fillRect(x + 14, y + 14 + bob, 2, 2);
-        } else if (facingVertical && facingUp) { // up
+        } else if (facingVertical && facingUp) {
             ctx.fillRect(x + 12, y + 13 + bob, 2, 2);
             ctx.fillRect(x + 18, y + 13 + bob, 2, 2);
-        } else { // down
+        } else {
             ctx.fillRect(x + 12, y + 14 + bob, 2, 2);
             ctx.fillRect(x + 18, y + 14 + bob, 2, 2);
         }
-        
-        // Backpack
+
         ctx.fillStyle = '#8b4513';
         ctx.fillRect(x + 4, y + 16 + bob, 4, 10);
         ctx.fillRect(x + 24, y + 16 + bob, 4, 10);
