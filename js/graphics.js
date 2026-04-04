@@ -31,19 +31,83 @@ class GraphicsEngine {
         this.particles = [];
         this.screenShake = { x: 0, y: 0, duration: 0 };
 
-        this.playerSpriteSheet = new Image();
-        this.playerSpriteLoaded = false;
-        this.playerSpriteFailed = false;
-        this.playerSpriteFrames = null;
-        this.playerSpriteMode = 'direct';
-        this.playerSpriteSheet.src = 'assets/mainplayablespriteset.png';
-        this.playerSpriteSheet.onload = () => {
-            this.playerSpriteLoaded = true;
-            this.preparePlayerSpriteFrames();
+        this.playerSprites = {
+            loaded: false,
+            failed: false,
+            images: {}
         };
-        this.playerSpriteSheet.onerror = () => {
-            this.playerSpriteFailed = true;
-        };
+        this.loadPlayerSprites();
+    }
+    
+    loadPlayerSprites() {
+        const directions = ['down', 'up', 'left', 'right'];
+        const actions = ['idle', 'walk_1', 'walk_2', 'run_1', 'run_2', 'bike'];
+        let loadedCount = 0;
+        const totalSprites = directions.length * actions.length;
+
+        directions.forEach(dir => {
+            this.playerSprites.images[dir] = {};
+            actions.forEach(action => {
+                const img = new Image();
+                const actionName = action === 'walk_1' || action === 'walk_2' ? 'walk' :
+                                   action === 'run_1' || action === 'run_2' ? 'run' : action;
+                const frameSuffix = action.includes('_1') ? '_1' : action.includes('_2') ? '_2' : '';
+                
+                img.src = `assets/player_${actionName}_${dir}${frameSuffix}.png`;
+                
+                img.onload = () => {
+                    // Pre-process image to remove background
+                    this.playerSprites.images[dir][action] = this.processSpriteImage(img);
+                    loadedCount++;
+                    if (loadedCount === totalSprites) {
+                        this.playerSprites.loaded = true;
+                        console.log('All player sprites loaded successfully');
+                    }
+                };
+                img.onerror = () => {
+                    console.error(`Failed to load sprite: ${img.src}`);
+                    this.playerSprites.failed = true;
+                };
+            });
+        });
+    }
+
+    processSpriteImage(img) {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, 0, 0);
+
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const data = imgData.data;
+
+        // Make gray/white backgrounds transparent
+        for (let i = 0; i < data.length; i += 4) {
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            const a = data[i + 3];
+
+            // Detect gray/white backgrounds (common in screenshot tools)
+            const isBg = (Math.abs(r - 128) < 40 && Math.abs(g - 128) < 40 && Math.abs(b - 128) < 40) ||
+                         (Math.abs(r - 192) < 30 && Math.abs(g - 192) < 30 && Math.abs(b - 192) < 30) ||
+                         (Math.abs(r - 255) < 20 && Math.abs(g - 255) < 20 && Math.abs(b - 255) < 20) ||
+                         (r > 240 && g > 240 && b > 240); // White
+
+            // Also remove UI grid lines if present
+            const isGridLine = r < 40 && g < 40 && b < 40 && a > 200 && 
+                               (i / 4 % canvas.width < 5 || i / 4 % canvas.width > canvas.width - 5 || 
+                                Math.floor(i / 4 / canvas.width) < 5 || Math.floor(i / 4 / canvas.width) > canvas.height - 5);
+
+            if (isBg || isGridLine) {
+                data[i + 3] = 0;
+            }
+        }
+        
+        ctx.putImageData(imgData, 0, 0);
+        return canvas;
     }
     
     // Set time of day for ambient lighting
@@ -451,164 +515,59 @@ class GraphicsEngine {
         ctx.fillRect(x + 28, y + 14, 2, 2);
     }
     
-    // Draw player sprite from sheet (fallback to procedural while loading/error)
+    // Draw player sprite
     drawPlayerSprite(x, y, player, ctx, alpha = 0) {
         const destSize = 32;
 
-        if (!this.playerSpriteLoaded || this.playerSpriteFailed) {
+        if (!this.playerSprites.loaded || this.playerSprites.failed) {
             this.drawProceduralPlayerSprite(x, y, player, ctx);
             return;
         }
 
-        const frameCol = player.isMoving ? (player.walkFrame % 4) : 0;
-        const frameRow = this.getPlayerSpriteRow(player.direction);
+        let directionStr = 'down';
+        if (player.direction.x > 0) directionStr = 'right';
+        else if (player.direction.x < 0) directionStr = 'left';
+        else if (player.direction.y < 0) directionStr = 'up';
 
-        const prevSmoothing = ctx.imageSmoothingEnabled;
-        ctx.imageSmoothingEnabled = false;
-        if (this.playerSpriteMode === 'embedded' && this.playerSpriteFrames) {
-            const frame = this.playerSpriteFrames[frameRow][frameCol];
-            ctx.drawImage(frame, x, y, destSize, destSize);
+        let actionStr = 'idle';
+        if (player.isMoving) {
+            // Cycle between walk_1 and walk_2
+            // walkFrame goes 0, 1, 2, 3. We want 0=idle, 1=walk_1, 2=idle, 3=walk_2
+            const frame = player.walkFrame % 4;
+            if (frame === 1) actionStr = player.isRunning ? 'run_1' : 'walk_1';
+            else if (frame === 3) actionStr = player.isRunning ? 'run_2' : 'walk_2';
+            else actionStr = 'idle';
+        }
+        
+        // Future proofing for bike state
+        if (player.isBiking) {
+            actionStr = 'bike';
+        }
+
+        const sprite = this.playerSprites.images[directionStr][actionStr];
+        
+        if (sprite) {
+            const prevSmoothing = ctx.imageSmoothingEnabled;
+            ctx.imageSmoothingEnabled = false;
+            
+            // Center the sprite in the 32x32 destination area
+            // Our raw images are likely larger (e.g. 50-80px), so we scale them down
+            const actualW = sprite.width;
+            const actualH = sprite.height;
+            const maxW = 28;
+            const maxH = 30;
+            const scale = Math.min(maxW / actualW, maxH / actualH, 1);
+            
+            const drawW = Math.floor(actualW * scale);
+            const drawH = Math.floor(actualH * scale);
+            const dx = x + Math.floor((32 - drawW) / 2);
+            const dy = y + 32 - drawH - 1; // Bottom align
+            
+            ctx.drawImage(sprite, dx, dy, drawW, drawH);
+            ctx.imageSmoothingEnabled = prevSmoothing;
         } else {
-            const sheet = this.playerSpriteSheet;
-            const frameW = Math.floor(sheet.width / 4);
-            const frameH = Math.floor(sheet.height / 4);
-            const srcX = frameCol * frameW;
-            const srcY = frameRow * frameH;
-            ctx.drawImage(sheet, srcX, srcY, frameW, frameH, x, y, destSize, destSize);
+            this.drawProceduralPlayerSprite(x, y, player, ctx);
         }
-        ctx.imageSmoothingEnabled = prevSmoothing;
-    }
-
-    preparePlayerSpriteFrames() {
-        const sheet = this.playerSpriteSheet;
-        console.log('Preparing sprite frames, dimensions:', sheet.width, 'x', sheet.height);
-        
-        // Always use embedded extraction for screenshot-style sprite sheets
-        // This handles UI borders and extracts just the 4x4 character grid
-        console.log('Using embedded extraction mode');
-        this.playerSpriteMode = 'embedded';
-        this.playerSpriteFrames = this.extractEmbeddedSpriteGrid(sheet);
-        console.log('Extracted frames:', this.playerSpriteFrames ? 'success' : 'failed');
-    }
-
-    extractEmbeddedSpriteGrid(sheet) {
-        // Based on user feedback, the previous coordinates were cropping the top/left of the sprites
-        console.log('Sprite sheet dimensions:', sheet.width, 'x', sheet.height);
-        
-        // Shifted significantly further left and up to capture the full sprite
-        // Previous (cropped head/left): gridX=135, gridY=35, cellSize=80
-        // New: Move further left and up, increase cell size to ensure no clipping
-        const gridX = 120;
-        const gridY = 25;
-        const cellSize = 86;
-        
-        console.log('Grid extraction:', { gridX, gridY, cellSize });
-
-        const srcCanvas = document.createElement('canvas');
-        srcCanvas.width = sheet.width;
-        srcCanvas.height = sheet.height;
-        const srcCtx = srcCanvas.getContext('2d');
-        srcCtx.imageSmoothingEnabled = false;
-        srcCtx.drawImage(sheet, 0, 0);
-
-        const frames = [];
-        for (let row = 0; row < 4; row++) {
-            const frameRow = [];
-            for (let col = 0; col < 4; col++) {
-                const sx = gridX + col * cellSize;
-                const sy = gridY + row * cellSize;
-                frameRow.push(this.extractSpriteFromCell(srcCtx, sx, sy, cellSize));
-            }
-            frames.push(frameRow);
-        }
-        return frames;
-    }
-
-    extractSpriteFromCell(srcCtx, sx, sy, size) {
-        // Extract inner sprite, ignoring UI borders
-        // Use a smaller padding to ensure we don't cut off wide sprites
-        const padding = Math.floor(size * 0.05);
-        const spriteSize = size - (padding * 2);
-        
-        const cellData = srcCtx.getImageData(sx + padding, sy + padding, spriteSize, spriteSize);
-        const data = cellData.data;
-
-        // Keep track of actual sprite bounds to center it properly
-        let minX = spriteSize, minY = spriteSize, maxX = 0, maxY = 0;
-
-        // Make gray/white backgrounds transparent
-        for (let y = 0; y < spriteSize; y++) {
-            for (let x = 0; x < spriteSize; x++) {
-                const i = (y * spriteSize + x) * 4;
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
-                const a = data[i + 3];
-                
-                // Detect and remove gray backgrounds (#808080 or similar)
-                const isGrayBg = (Math.abs(r - 128) < 40 && Math.abs(g - 128) < 40 && Math.abs(b - 128) < 40) ||
-                                 (Math.abs(r - 192) < 30 && Math.abs(g - 192) < 30 && Math.abs(b - 192) < 30) ||
-                                 (Math.abs(r - 255) < 20 && Math.abs(g - 255) < 20 && Math.abs(b - 255) < 20);
-                
-                // Also remove the dark UI grid lines (almost black but not quite)
-                const isGridLine = r < 40 && g < 40 && b < 40 && a > 200 && 
-                                   (x < 5 || x > spriteSize - 5 || y < 5 || y > spriteSize - 5);
-                
-                if (isGrayBg || a < 10 || isGridLine) {
-                    data[i + 3] = 0;
-                } else {
-                    // Track bounds of the actual sprite pixels
-                    if (x < minX) minX = x;
-                    if (y < minY) minY = y;
-                    if (x > maxX) maxX = x;
-                    if (y > maxY) maxY = y;
-                }
-            }
-        }
-
-        // Create output canvas
-        const out = document.createElement('canvas');
-        out.width = 32;
-        out.height = 32;
-        const outCtx = out.getContext('2d');
-        outCtx.imageSmoothingEnabled = false;
-
-        // If no sprite found, return empty
-        if (maxX < minX || maxY < minY) {
-            return out;
-        }
-
-        // Put cleaned data
-        const clean = document.createElement('canvas');
-        clean.width = spriteSize;
-        clean.height = spriteSize;
-        clean.getContext('2d').putImageData(cellData, 0, 0);
-
-        // Calculate actual sprite dimensions
-        const actualW = maxX - minX + 1;
-        const actualH = maxY - minY + 1;
-
-        // Center and bottom-align the sprite in the 32x32 output
-        const maxW = 28;
-        const maxH = 30;
-        const scale = Math.min(maxW / actualW, maxH / actualH, 1);
-        
-        const drawW = Math.floor(actualW * scale);
-        const drawH = Math.floor(actualH * scale);
-        
-        // Ensure perfectly centered horizontally
-        const dx = Math.floor((32 - drawW) / 2);
-        const dy = 32 - drawH - 1; // Bottom align
-
-        outCtx.drawImage(clean, minX, minY, actualW, actualH, dx, dy, drawW, drawH);
-        return out;
-    }
-
-    getPlayerSpriteRow(direction) {
-        if (direction.x > 0) return 3;
-        if (direction.x < 0) return 2;
-        if (direction.y < 0) return 1;
-        return 0;
     }
 
     drawProceduralPlayerSprite(x, y, player, ctx) {

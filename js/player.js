@@ -2,22 +2,21 @@ class Player {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.direction = { x: 0, y: -1 }; // facing up
-        
+        this.direction = { x: 0, y: 1 }; // Facing down
         this.name = 'RED';
         this.badges = [];
-        
         this.isMoving = false;
-        this.moveProgress = 0;
-        this.moveDurationMs = 120; // per tile step
+        this.moveProgress = 0; // 0 to 1
         this.moveElapsedMs = 0;
-        this.moveFrom = { x: x, y: y };
-        this.moveTo = { x: x, y: y };
-
         this.walkFrame = 0;
         this.walkFrameTimer = 0;
+        this.moveSpeed = 250; // Milliseconds per tile (lower is faster)
+        this.runSpeedMultiplier = 1.8; // How much faster running is
+        this.isRunning = false;
+        this.isBiking = false; // Future proofing
+        this.moveFrom = { x: x, y: y };
+        this.moveTo = { x: x, y: y };
         this.walkFrameIntervalMs = 80;
-
         this.justCompletedMove = false;
         
         this.TILE_SIZE = 32;
@@ -43,13 +42,13 @@ class Player {
         if (map.isWalkable(targetX, targetY)) {
             this.isMoving = true;
             this.moveProgress = 0;
-            this.moveElapsedMs = 0;
+            this.walkFrame = 0;
+            this.walkFrameTimer = 0;
             this.moveFrom = { x: this.x, y: this.y };
             this.moveTo = { x: targetX, y: targetY };
             return true;
         }
 
-        this.walkFrame = 0;
         return false;
     }
 
@@ -58,12 +57,18 @@ class Player {
     }
     
     update(deltaTime) {
+        this.justCompletedMove = false;
+
         if (this.isMoving) {
+            const currentSpeed = this.isBiking ? this.moveSpeed / 2.5 : 
+                                 this.isRunning ? this.moveSpeed / this.runSpeedMultiplier : 
+                                 this.moveSpeed;
+
             this.moveElapsedMs += deltaTime;
-            this.moveProgress = Math.min(1, this.moveElapsedMs / this.moveDurationMs);
+            this.moveProgress = Math.min(1, this.moveElapsedMs / currentSpeed);
 
             this.walkFrameTimer += deltaTime;
-            if (this.walkFrameTimer >= this.walkFrameIntervalMs) {
+            if (this.walkFrameTimer >= 80) {
                 this.walkFrameTimer = 0;
                 this.walkFrame = (this.walkFrame + 1) % 4;
             }
@@ -74,6 +79,8 @@ class Player {
                 this.isMoving = false;
                 this.moveProgress = 0;
                 this.moveElapsedMs = 0;
+                this.walkFrame = 0; // Reset to idle
+                this.walkFrameTimer = 0;
                 this.justCompletedMove = true;
             }
         } else {

@@ -208,9 +208,6 @@ class Game {
         this.state = 'menu';
         const menu = document.getElementById('menu');
         menu.classList.remove('hidden');
-        const items = menu.querySelectorAll('li');
-        items.forEach(item => item.classList.remove('selected'));
-        items[0].classList.add('selected');
     }
     
     closeMenu() {
@@ -240,19 +237,6 @@ class Game {
         }
     }
     
-    showPokemonMenu() {
-        let text = 'Your Pokemon:\n';
-        for (let i = 0; i < this.party.length; i++) {
-            const p = this.party[i];
-            text += `${i + 1}. ${p.getName()} Lv${p.level} (${p.currentHp}/${p.maxHp} HP)`;
-            if (p.status) text += ` [${p.status.toUpperCase()}]`;
-            if (p.isFainted) text += ' [FAINTED]';
-            text += '\n';
-        }
-        this.showDialog(text);
-        this.closeMenu();
-    }
-    
     showBagMenu() {
         let text = 'Your Bag:\n';
         text += `Money: $${this.inventory.money}\n\n`;
@@ -270,7 +254,26 @@ class Game {
             }
         }
         
-        this.showDialog(text || 'Bag is empty.');
+        this.showDialog(text);
+        this.closeMenu();
+    }
+
+    showPokemonMenu() {
+        if (this.party.length === 0) {
+            this.showDialog('You have no Pokemon!');
+            this.closeMenu();
+            return;
+        }
+        
+        let text = 'Your Pokemon:\n';
+        for (let i = 0; i < this.party.length; i++) {
+            const p = this.party[i];
+            text += `${i + 1}. ${p.getName()} Lv${p.level} (${p.currentHp}/${p.maxHp} HP)`;
+            if (p.status) text += ` [${p.status.toUpperCase()}]`;
+            if (p.isFainted) text += ' [FAINTED]';
+            text += '\n';
+        }
+        this.showDialog(text);
         this.closeMenu();
     }
     
