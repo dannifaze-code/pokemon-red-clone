@@ -17,6 +17,8 @@ class GameMap {
         this.TILE_SIZE = 32;
         this.generatedMapData = generatedMapData || null;
         this.areaGrid = null;
+        this.decorations = [];
+        this.facilityRegistry = {};
 
         if (this.generatedMapData) {
             this.loadGeneratedMapData(this.generatedMapData);
@@ -84,6 +86,7 @@ class GameMap {
         };
 
         this.applyRegistriesToTiles();
+        this.applyAssetOverworldDecorations();
     }
 
     loadGeneratedMapData(data) {
@@ -91,12 +94,14 @@ class GameMap {
         this.height = data.height;
         this.tiles = data.tiles.map(row => [...row]);
         this.areaGrid = data.areaGrid ? data.areaGrid.map(row => [...row]) : null;
+        this.decorations = (data.decorations || []).map(decoration => ({ ...decoration }));
+        this.facilityRegistry = data.facilityRegistry ? { ...data.facilityRegistry } : {};
         this.generatedSpawn = data.spawn || { x: Math.floor(this.width / 2), y: Math.floor(this.height / 2) };
         this.npcRegistry = {};
         this.signRegistry = {};
-        this.professorPos = { x: -1, y: -1 };
-        this.healCenterDoors = new Set();
-        this.gymDoors = {};
+        this.professorPos = data.professorPos || { x: -1, y: -1 };
+        this.healCenterDoors = new Set(data.healCenterDoors || []);
+        this.gymDoors = data.gymDoors ? { ...data.gymDoors } : {};
     }
 
     applyRegistriesToTiles() {
@@ -113,6 +118,98 @@ class GameMap {
             const [sx, sy] = key.split(',').map(Number);
             if (this.tiles[sy]) this.tiles[sy][sx] = 'sign';
         }
+    }
+
+    addDecoration(assetKey, x, y, width, height, options = {}) {
+        this.decorations.push({
+            assetKey,
+            x,
+            y,
+            width,
+            height,
+            mode: options.mode || 'contain',
+            opacity: options.opacity ?? 1,
+            zIndex: options.zIndex ?? 0
+        });
+    }
+
+    registerFacilityDoor(x, y, facility) {
+        this.facilityRegistry[`${x},${y}`] = { ...facility, x, y };
+    }
+
+    decorateTownBuilding(assetKey, x0, y0, x1, y1) {
+        this.addDecoration(assetKey, x0, y0 - 1, (x1 - x0) + 1, (y1 - y0) + 2, { zIndex: 4 });
+    }
+
+    applyAssetOverworldDecorations() {
+        this.addDecoration('forest_canopy', 2, 75, 48, 16, { mode: 'cover', zIndex: 1 });
+        this.addDecoration('forest_canopy', 100, 75, 46, 16, { mode: 'cover', zIndex: 1 });
+        this.addDecoration('grass_lake_scene', 4, 88, 30, 10, { mode: 'cover', zIndex: 2 });
+        this.addDecoration('flower_meadow', 34, 88, 10, 6, { mode: 'contain', zIndex: 3 });
+        this.addDecoration('flower_patch', 101, 90, 5, 4, { mode: 'contain', zIndex: 3 });
+        this.addDecoration('roadside_trees', 58, 70, 4, 8, { mode: 'cover', zIndex: 3 });
+        this.addDecoration('roadside_trees', 89, 70, 4, 8, { mode: 'cover', zIndex: 3 });
+        this.addDecoration('forest_canopy', 14, 61, 40, 10, { mode: 'cover', zIndex: 1 });
+        this.addDecoration('forest_canopy', 94, 61, 40, 10, { mode: 'cover', zIndex: 1 });
+        this.addDecoration('flower_meadow', 103, 47, 9, 6, { mode: 'contain', zIndex: 3 });
+        this.addDecoration('flower_patch', 38, 47, 5, 4, { mode: 'contain', zIndex: 3 });
+        this.addDecoration('mountain_tops', 55, 2, 40, 16, { mode: 'cover', zIndex: 2 });
+        this.addDecoration('mountain_tops', 56, 23, 38, 12, { mode: 'cover', zIndex: 2 });
+        this.addDecoration('roadside_trees', 70, 24, 4, 9, { mode: 'cover', zIndex: 3 });
+
+        this.decorateTownBuilding('civilian_home', 54, 79, 60, 84);
+        this.decorateTownBuilding('civilian_home', 77, 79, 83, 84);
+        this.decorateTownBuilding('health_center', 86, 79, 92, 84);
+        this.decorateTownBuilding('medicine_plaza', 77, 87, 83, 92);
+        this.decorateTownBuilding('civilian_home', 63, 48, 69, 53);
+        this.decorateTownBuilding('medicine_plaza', 77, 48, 83, 53);
+        this.decorateTownBuilding('health_center', 86, 48, 92, 53);
+        this.decorateTownBuilding('civilian_home', 63, 28, 69, 33);
+        this.decorateTownBuilding('medicine_plaza', 77, 28, 83, 33);
+        this.decorateTownBuilding('health_center', 86, 28, 92, 33);
+
+        this.registerFacilityDoor(57, 84, {
+            type: 'home',
+            title: 'Civilian Home',
+            image: 'assets/Civilian Home interior.png',
+            description: 'A cosy civilian home filled with everyday life and friendly townsfolk.'
+        });
+        this.registerFacilityDoor(80, 84, {
+            type: 'home',
+            title: 'Civilian Home',
+            image: 'assets/Civilian Home interior.png',
+            description: 'A common household interior used throughout the region.'
+        });
+        this.registerFacilityDoor(80, 92, {
+            type: 'plaza',
+            title: 'Medicine Plaza',
+            image: 'assets/Medicine Plaza Interior.png',
+            description: 'A regional plaza stocked with healing items, Poké Balls, and battle supplies.'
+        });
+        this.registerFacilityDoor(66, 53, {
+            type: 'home',
+            title: 'Civilian Home',
+            image: 'assets/Civilian Home interior.png',
+            description: 'A warm civilian house tucked into the marsh-side routes.'
+        });
+        this.registerFacilityDoor(80, 53, {
+            type: 'plaza',
+            title: 'Medicine Plaza',
+            image: 'assets/Medicine Plaza Interior.png',
+            description: 'A swamp-town branch of the Medicine Plaza where travellers can restock.'
+        });
+        this.registerFacilityDoor(66, 33, {
+            type: 'home',
+            title: 'Civilian Home',
+            image: 'assets/Civilian Home interior.png',
+            description: 'A city residence built into the harsher northern routes.'
+        });
+        this.registerFacilityDoor(80, 33, {
+            type: 'plaza',
+            title: 'Medicine Plaza',
+            image: 'assets/Medicine Plaza Interior.png',
+            description: 'A northern plaza branch carrying the same trusted Pokémon supplies.'
+        });
     }
 
     // ====================================================
@@ -416,6 +513,10 @@ class GameMap {
         return this.gymDoors[`${x},${y}`] || null;
     }
 
+    getFacilityAt(x, y) {
+        return this.facilityRegistry[`${x},${y}`] || null;
+    }
+
     getSpawnPoint() {
         return this.generatedSpawn || { x: 75, y: 87 };
     }
@@ -455,11 +556,15 @@ class GameMap {
                 const screenX = x * this.TILE_SIZE;
                 const screenY = y * this.TILE_SIZE;
                 if (graphics) {
-                    graphics.drawTile(screenX, screenY, tile, ctx);
+                    graphics.drawTile(screenX, screenY, tile, ctx, { tileX: x, tileY: y, map: this });
                 } else {
                     this.drawSimpleTile(screenX, screenY, tile, ctx);
                 }
             }
+        }
+
+        if (graphics && this.decorations.length) {
+            graphics.drawDecorations(this.decorations, ctx, offsetX, offsetY, viewWidth, viewHeight);
         }
     }
 

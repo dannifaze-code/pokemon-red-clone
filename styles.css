@@ -378,6 +378,120 @@ body {
     image-rendering: pixelated;
 }
 
+#facility-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(4, 10, 24, 0.78);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    pointer-events: auto;
+}
+
+.facility-panel {
+    width: min(92%, 760px);
+    max-height: 92%;
+    overflow: auto;
+    background: #edf4ff;
+    border: 4px solid #0d1328;
+    border-radius: 16px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.facility-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: #0d1328;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+#facility-close-button {
+    padding: 10px 16px;
+    font-size: 14px;
+}
+
+#facility-scene-image {
+    width: 100%;
+    max-height: 320px;
+    object-fit: contain;
+    background: #0f1728;
+    border: 3px solid #0d1328;
+    border-radius: 12px;
+    image-rendering: pixelated;
+}
+
+.facility-copy,
+.facility-money,
+.facility-hint {
+    color: #0d1328;
+}
+
+.facility-copy {
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.facility-money {
+    font-size: 15px;
+    font-weight: bold;
+    background: #dfeaff;
+    border: 2px solid #0d1328;
+    border-radius: 10px;
+    padding: 10px 12px;
+}
+
+.facility-items {
+    display: grid;
+    gap: 10px;
+}
+
+.facility-item {
+    width: 100%;
+    border: 3px solid #0d1328;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 12px 14px;
+    text-align: left;
+    font-family: inherit;
+    cursor: pointer;
+    display: grid;
+    gap: 6px;
+    color: #0d1328;
+}
+
+.facility-item.is-selected {
+    background: #ffdf6f;
+}
+
+.facility-item-title {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.facility-item-description {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #31405f;
+}
+
+.facility-hint {
+    font-size: 13px;
+    color: #31405f;
+}
+
 .hidden {
     display: none !important;
 }
@@ -434,6 +548,11 @@ body {
     }
 
     .world-map-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .facility-header {
         flex-direction: column;
         align-items: flex-start;
     }

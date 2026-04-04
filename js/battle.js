@@ -724,12 +724,12 @@ class BattleSystem {
 
         if (this.enemyActive) {
             this.drawPokemon(ctx, this.enemyActive, width * 0.76, height * 0.28, true);
-            this.drawHPBar(ctx, this.enemyActive, 26, 72, 248, true);
+            this.drawHPBar(ctx, this.enemyActive, width - 302, 56, 248, true);
         }
 
         if (this.playerActive) {
             this.drawPokemon(ctx, this.playerActive, width * 0.22, height * 0.62, false);
-            this.drawHPBar(ctx, this.playerActive, width - 286, height - 236, 254, false);
+            this.drawHPBar(ctx, this.playerActive, 48, height - 356, 254, false);
         }
 
         this.drawCommandBox(ctx, width, height);
@@ -739,7 +739,18 @@ class BattleSystem {
         }
     }
 
+    getBattleUiAsset() {
+        return this.game?.graphics?.getWorldAsset?.('battle_ui') || null;
+    }
+
     drawBattleBackdrop(ctx, width, height) {
+        const battleUi = this.getBattleUiAsset();
+        if (battleUi) {
+            ctx.drawImage(battleUi, 0, 0, battleUi.naturalWidth, battleUi.naturalHeight, 0, 0, width, height);
+            this.coverBattleReferencePokemon(ctx, width, height);
+            return;
+        }
+
         const bands = [
             '#143153', '#1A3C66', '#1E446F', '#214A74', '#26527D',
             '#2A5A84', '#2D5E88', '#31587B', '#334F6B', '#31455D',
@@ -757,6 +768,21 @@ class BattleSystem {
         overlay.addColorStop(1, 'rgba(10, 22, 40, 0.22)');
         ctx.fillStyle = overlay;
         ctx.fillRect(0, 0, width, height - 140);
+    }
+
+    coverBattleReferencePokemon(ctx, width, height) {
+        ctx.fillStyle = '#76bf87';
+        ctx.fillRect(width * 0.58, height * 0.28, width * 0.3, height * 0.28);
+        ctx.fillRect(width * 0.04, height * 0.56, width * 0.28, height * 0.24);
+
+        ctx.fillStyle = '#19a328';
+        ctx.beginPath();
+        ctx.ellipse(width * 0.76, height * 0.37, 94, 34, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.ellipse(width * 0.22, height * 0.77, 96, 36, 0, 0, Math.PI * 2);
+        ctx.fill();
     }
 
     drawBattleBase(ctx, x, y, rx, ry) {

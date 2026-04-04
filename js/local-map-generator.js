@@ -73,6 +73,10 @@ class LocalMapGenerator {
         const rng = this.createSeededRandom(normalized.seed);
         const tiles = this.createGrid(normalized.width, normalized.height, biome.baseTile);
         const areaGrid = this.createGrid(normalized.width, normalized.height, biome.areaKey);
+        const decorations = [];
+        const facilityRegistry = {};
+        const healCenterDoors = [];
+        const gymDoors = {};
 
         this.paintBorder(tiles, biome.obstacleTile);
         this.paintAccentZones(tiles, normalized, biome, rng);
@@ -80,7 +84,8 @@ class LocalMapGenerator {
         this.paintTallGrass(tiles, normalized, biome, rng);
         const spawn = this.paintMainPath(tiles, normalized, biome);
         this.ensureSpawnClear(tiles, spawn, biome);
-        this.addLandmarks(tiles, normalized, biome, rng, spawn);
+        this.addLandmarks(tiles, normalized, biome, rng, spawn, decorations, facilityRegistry, healCenterDoors, gymDoors);
+        this.addScenicDecorations(tiles, normalized, biome, rng, spawn, decorations);
 
         const previewImage = this.buildPreviewImage(tiles);
         const summary = this.summarizeTiles(tiles);
@@ -94,6 +99,10 @@ class LocalMapGenerator {
             tiles,
             areaGrid,
             spawn,
+            decorations,
+            facilityRegistry,
+            healCenterDoors,
+            gymDoors,
             previewImage,
             encounterTableKey: biome.encounterTableKey,
             summary
@@ -249,21 +258,74 @@ class LocalMapGenerator {
         }
     }
 
-    addLandmarks(tiles, config, biome, rng, spawn) {
+    addLandmarks(tiles, config, biome, rng, spawn, decorations, facilityRegistry, healCenterDoors, gymDoors) {
         const height = tiles.length;
         const width = tiles[0].length;
         const centerX = Math.floor(width / 2);
         const townY = Math.max(4, Math.floor(height * 0.22));
 
-        this.paintBuilding(tiles, centerX - 10, townY, 7, 5, 'heal_center', biome.pathTile);
-        this.paintBuilding(tiles, centerX + 4, townY, 7, 5, 'gym', biome.pathTile);
+        const healCenter = this.paintBuilding(tiles, centerX - 10, townY, 7, 5, 'heal_center', biome.pathTile);
+        const gym = this.paintBuilding(tiles, centerX + 4, townY, 7, 5, 'gym', biome.pathTile);
 
         const sideBuildingY = Math.max(6, Math.floor(height * 0.62));
-        this.paintBuilding(tiles, Math.max(2, centerX - 18), sideBuildingY, 6, 4, 'building', biome.pathTile);
+        const plaza = this.paintBuilding(tiles, Math.max(2, centerX - 18), sideBuildingY, 6, 4, 'building', biome.pathTile);
 
         const landmarkX = this.clamp(spawn.x + 8 + Math.floor(rng() * 8), 4, width - 8);
         const landmarkY = this.clamp(spawn.y - 14 - Math.floor(rng() * 8), 4, height - 10);
-        this.paintBuilding(tiles, landmarkX, landmarkY, 6, 4, 'building', biome.pathTile);
+        const homeA = this.paintBuilding(tiles, landmarkX, landmarkY, 6, 4, 'building', biome.pathTile);
+
+        const homeBX = this.clamp(centerX + 13, 4, width - 10);
+        const homeBY = this.clamp(Math.floor(height * 0.48), 4, height - 10);
+        const homeB = this.paintBuilding(tiles, homeBX, homeBY, 6, 4, 'building', biome.pathTile);
+
+        decorations.push({ assetKey: 'health_center', x: centerX - 10, y: townY - 1, width: 7, height: 7, mode: 'contain', zIndex: 4 });
+        decorations.push({ assetKey: 'medicine_plaza', x: Math.max(2, centerX - 18), y: sideBuildingY - 1, width: 6, height: 6, mode: 'contain', zIndex: 4 });
+        decorations.push({ assetKey: 'civilian_home', x: landmarkX, y: landmarkY - 1, width: 6, height: 6, mode: 'contain', zIndex: 4 });
+        decorations.push({ assetKey: 'civilian_home', x: homeBX, y: homeBY - 1, width: 6, height: 6, mode: 'contain', zIndex: 4 });
+
+        healCenterDoors.push(`${healCenter.doorX},${healCenter.doorY}`);
+        gymDoors[`${gym.doorX},${gym.doorY}`] = 'gym_brix';
+        facilityRegistry[`${plaza.doorX},${plaza.doorY}`] = {
+            type: 'plaza',
+            title: 'Medicine Plaza',
+            image: 'assets/Medicine Plaza Interior.png',
+            description: 'A generated-town Medicine Plaza carrying standard healing and capture supplies.'
+        };
+        facilityRegistry[`${homeA.doorX},${homeA.doorY}`] = {
+            type: 'home',
+            title: 'Civilian Home',
+            image: 'assets/Civilian Home interior.png',
+            description: 'One of the many civilian homes woven into this generated region.'
+        };
+        facilityRegistry[`${homeB.doorX},${homeB.doorY}`] = {
+            type: 'home',
+            title: 'Civilian Home',
+            image: 'assets/Civilian Home interior.png',
+            description: 'A second common house placed to make generated towns feel lived in.'
+        };
+    }
+
+    addScenicDecorations(tiles, config, biome, rng, spawn, decorations) {
+        const width = tiles[0].length;
+        const height = tiles.length;
+        const pathX = spawn.x;
+
+        decorations.push({ assetKey: 'roadside_trees', x: this.clamp(pathX - 4, 1, width - 5), y: 3, width: 3, height: Math.max(8, Math.floor(height * 0.34)), mode: 'cover', zIndex: 2 });
+        decorations.push({ assetKey: 'roadside_trees', x: this.clamp(pathX + 2, 1, width - 5), y: Math.max(3, Math.floor(height * 0.3)), width: 3, height: Math.max(8, Math.floor(height * 0.34)), mode: 'cover', zIndex: 2 });
+        decorations.push({ assetKey: 'flower_meadow', x: this.clamp(spawn.x - 14, 2, width - 12), y: this.clamp(spawn.y - 6, 2, height - 8), width: 8, height: 6, mode: 'contain', zIndex: 3 });
+        decorations.push({ assetKey: 'flower_patch', x: this.clamp(spawn.x + 8, 2, width - 6), y: this.clamp(spawn.y - 10, 2, height - 6), width: 4, height: 4, mode: 'contain', zIndex: 3 });
+
+        if (biome.accentTile === 'water') {
+            decorations.push({ assetKey: 'grass_lake_scene', x: 2, y: this.clamp(Math.floor(height * 0.58), 2, height - 12), width: Math.max(12, Math.floor(width * 0.28)), height: 10, mode: 'cover', zIndex: 2 });
+        }
+
+        if (biome.obstacleTile === 'tree' || biome.obstacleTile === 'dark_tree') {
+            decorations.push({ assetKey: 'forest_canopy', x: this.clamp(Math.floor(width * 0.62), 2, width - 22), y: 1, width: Math.max(18, Math.floor(width * 0.24)), height: Math.max(12, Math.floor(height * 0.22)), mode: 'cover', zIndex: 1 });
+        }
+
+        if (biome.obstacleTile === 'mountain') {
+            decorations.push({ assetKey: 'mountain_tops', x: this.clamp(Math.floor(width * 0.58), 2, width - 20), y: 2, width: Math.max(16, Math.floor(width * 0.2)), height: Math.max(10, Math.floor(height * 0.2)), mode: 'cover', zIndex: 2 });
+        }
     }
 
     paintBuilding(tiles, startX, startY, width, height, tileType, pathTile) {
@@ -292,6 +354,8 @@ class LocalMapGenerator {
                 if (doorX + 1 < tiles[0].length - 1) tiles[y][doorX + 1] = pathTile;
             }
         }
+
+        return { startX, startY, maxX, maxY, doorX, doorY: maxY };
     }
 
     summarizeTiles(tiles) {

@@ -4,6 +4,14 @@ class Game {
         this.ctx = this.canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
         this.worldMapOverlay = document.getElementById('world-map-overlay');
+        this.facilityOverlay = document.getElementById('facility-overlay');
+        this.facilityTitle = document.getElementById('facility-title');
+        this.facilitySceneImage = document.getElementById('facility-scene-image');
+        this.facilityCopy = document.getElementById('facility-copy');
+        this.facilityMoney = document.getElementById('facility-money');
+        this.facilityItems = document.getElementById('facility-items');
+        this.facilityHint = document.getElementById('facility-hint');
+        this.facilityCloseButton = document.getElementById('facility-close-button');
         this.generatedMapData = options.generatedMapData || null;
         this.generatedWorldMapImage = options.generatedWorldMapImage || this.generatedMapData?.previewImage || null;
         
@@ -30,6 +38,10 @@ class Game {
             tree: '#2d5a2d',
             building: '#8c6b4a'
         };
+
+        this.currentFacility = null;
+        this.facilitySelection = 0;
+        this.plazaStock = ['POTION', 'SUPER_POTION', 'ANTIDOTE', 'PARALYZ_HEAL', 'BURN_HEAL', 'AWAKENING', 'FULL_HEAL', 'POKE_BALL', 'GREAT_BALL', 'REVIVE', 'ORAN_BERRY', 'LEFTOVERS'];
         
         this.lastTime = 0;
         this.deltaTime = 0;
@@ -75,6 +87,8 @@ class Game {
         this.dialogPageIndex = 0;
         this.dialogCallback = null;
 
+        this.closeFacilityOverlay(true);
+
         this.setWorldMapImage(this.generatedWorldMapImage || 'game%20world%20map/s2EarB.png');
         
         this.startNewGame();
@@ -98,6 +112,7 @@ class Game {
         this.lastHealX = this.player.x;
         this.lastHealY = this.player.y;
         this.player.name = PLAYER_NAME;
+        this.closeFacilityOverlay(true);
 
         // Choose starter
         const event = getStoryEvent(0);
@@ -149,6 +164,7 @@ class Game {
         this.dialogPageIndex = 0;
         this.dialogCallback = null;
         this.worldMapOverlay.classList.add('hidden');
+        this.closeFacilityOverlay(true);
         this.state = 'world';
         this.setWorldMapImage(this.generatedWorldMapImage || 'game%20world%20map/s2EarB.png');
         this.startNewGame();
@@ -157,6 +173,20 @@ class Game {
     setupEventListeners() {
         window.addEventListener('keydown', (e) => this.handleInput(e, true));
         window.addEventListener('keyup', (e) => this.handleInput(e, false));
+        if (this.facilityCloseButton) {
+            this.facilityCloseButton.addEventListener('click', () => this.closeFacilityOverlay());
+        }
+        if (this.facilityItems) {
+            this.facilityItems.addEventListener('click', (e) => {
+                const button = e.target.closest('[data-item-id]');
+                if (!button) {
+                    return;
+                }
+                const buttons = Array.from(this.facilityItems.querySelectorAll('[data-item-id]'));
+                this.facilitySelection = Math.max(0, buttons.indexOf(button));
+                this.purchaseFacilityItem(button.dataset.itemId);
+            });
+        }
     }
     
     handleInput(e, isKeyDown) {
@@ -179,6 +209,14 @@ class Game {
                 e.preventDefault();
                 this.closeWorldMap();
             }
+            return;
+        }
+
+        if (this.state === 'facility') {
+            if (!isKeyDown) {
+                return;
+            }
+            this.handleFacilityInput(e);
             return;
         }
 
@@ -344,6 +382,140 @@ class Game {
         this.state = 'world';
         this.worldMapOverlay.classList.add('hidden');
     }
+
+    handleFacilityInput(e) {
+        if (!this.currentFacility) {
+            this.closeFacilityOverlay();
+            return;
+        }
+
+        const key = e.key.toLowerCase();
+        if (key === 'x' || key === 'escape') {
+            e.preventDefault();
+            this.closeFacilityOverlay();
+            return;
+        }
+
+        if (this.currentFacility.type !== 'plaza') {
+            if (key === 'z' || key === ' ' || key === 'enter') {
+                e.preventDefault();
+                this.closeFacilityOverlay();
+            }
+            return;
+        }
+
+        if (key === 'arrowup' || key === 'w') {
+            e.preventDefault();
+            this.moveFacilitySelection(-1);
+            return;
+        }
+
+        if (key === 'arrowdown' || key === 's') {
+            e.preventDefault();
+            this.moveFacilitySelection(1);
+            return;
+        }
+
+        if (key === 'z' || key === ' ' || key === 'enter') {
+            e.preventDefault();
+            const itemId = this.plazaStock[this.facilitySelection];
+            if (itemId) {
+                this.purchaseFacilityItem(itemId);
+            }
+        }
+    }
+
+    openFacilityOverlay(facility) {
+        if (!this.facilityOverlay || !facility) {
+            return;
+        }
+
+        this.clearMovementInput();
+        this.closeMenu();
+        this.worldMapOverlay.classList.add('hidden');
+        this.currentFacility = { ...facility };
+        this.facilitySelection = 0;
+        this.state = 'facility';
+        this.renderFacilityOverlay();
+        this.facilityOverlay.classList.remove('hidden');
+    }
+
+    closeFacilityOverlay(force = false) {
+        if (!this.facilityOverlay) {
+            return;
+        }
+
+        if (!force && this.state === 'facility') {
+            this.state = 'world';
+        }
+
+        this.currentFacility = null;
+        this.facilitySelection = 0;
+        this.facilityOverlay.classList.add('hidden');
+        this.facilityMoney.classList.add('hidden');
+        this.facilityItems.classList.add('hidden');
+    }
+
+    moveFacilitySelection(delta) {
+        const total = this.plazaStock.length;
+        if (!total) {
+            return;
+        }
+
+        this.facilitySelection = (this.facilitySelection + delta + total) % total;
+        this.renderFacilityOverlay();
+    }
+
+    renderFacilityOverlay(message = '') {
+        if (!this.currentFacility || !this.facilityOverlay) {
+            return;
+        }
+
+        this.facilityTitle.textContent = this.currentFacility.title;
+        this.facilitySceneImage.src = this.currentFacility.image;
+        this.facilityCopy.textContent = message || this.currentFacility.description || '';
+
+        if (this.currentFacility.type === 'plaza') {
+            this.facilityMoney.textContent = `Money: $${this.inventory.money}`;
+            this.facilityMoney.classList.remove('hidden');
+            this.facilityItems.classList.remove('hidden');
+            this.facilityItems.innerHTML = this.plazaStock.map((itemId, index) => {
+                const item = ITEM_DATABASE[itemId];
+                const selectedClass = index === this.facilitySelection ? ' is-selected' : '';
+                return `
+                    <button class="facility-item${selectedClass}" type="button" data-item-id="${item.id}">
+                        <span class="facility-item-title">
+                            <span>${item.name}</span>
+                            <span>$${item.price}</span>
+                        </span>
+                        <span class="facility-item-description">${item.description}</span>
+                    </button>
+                `;
+            }).join('');
+            this.facilityHint.textContent = 'Use Up/Down and Z to buy, or click an item. Press X or Esc to close.';
+            return;
+        }
+
+        this.facilityMoney.classList.add('hidden');
+        this.facilityItems.classList.add('hidden');
+        this.facilityItems.innerHTML = '';
+        this.facilityHint.textContent = 'Press Z, X, or Esc to leave this building.';
+    }
+
+    purchaseFacilityItem(itemId) {
+        const item = ITEM_DATABASE[itemId];
+        if (!item) {
+            return;
+        }
+
+        if (!this.inventory.spendMoney(item.price)) {
+            this.renderFacilityOverlay(`Not enough money for ${item.name}.`);
+            return;
+        }
+
+        this.inventory.addItem(itemId, 1);
+        this.renderFacilityOverlay(`${item.name} was added to your Bag.`);
+    }
     
     executeMenuAction(action) {
         switch(action) {
@@ -445,6 +617,11 @@ class Game {
             const lines = signId ? getDialog(signId, this.storyProgress) : ['...'];
             this.showDialogPages(lines);
         } else if (tile === 'door') {
+            const facility = this.map.getFacilityAt(facingX, facingY);
+            if (facility) {
+                this.openFacilityOverlay(facility);
+                return;
+            }
             if (this.map.isLabDoor(facingX, facingY)) {
                 const lines = getDialog('professor', this.storyProgress);
                 this.showDialogPages(lines);

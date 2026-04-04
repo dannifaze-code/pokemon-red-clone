@@ -7,6 +7,9 @@ class GraphicsEngine {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
         this.ctx.imageSmoothingEnabled = false;
+        this.worldAssets = {
+            images: {}
+        };
         
         // Color palettes for different environments
         this.palettes = {
@@ -36,7 +39,44 @@ class GraphicsEngine {
             failed: false,
             images: {}
         };
+        this.loadWorldAssets();
         this.loadPlayerSprites();
+    }
+
+    loadWorldAssets() {
+        const sources = {
+            forest_canopy: 'assets/new trees and land.png',
+            road: 'assets/new roads.png',
+            battle_ui: 'assets/new battle ui.png',
+            mountain_tops: 'assets/mountain tops.png',
+            medicine_plaza: 'assets/MedicinePlaza\'s.png',
+            medicine_plaza_interior: 'assets/Medicine Plaza Interior.png',
+            civilian_home: 'assets/Civilian Home.png',
+            civilian_home_interior: 'assets/Civilian Home interior.png',
+            flower_meadow: 'assets/grass patches and flowers.png',
+            grass_lake_scene: 'assets/grass and lakes.png',
+            flower_patch: 'assets/flower patches.png',
+            roadside_trees: 'assets/Long vertical Tree next to roads.png',
+            health_center: 'assets/PokemonHealthcenter.png',
+            health_center_interior: 'assets/PokemonHealthCenterInterior.png'
+        };
+
+        Object.entries(sources).forEach(([key, src]) => {
+            const img = new Image();
+            img.src = src;
+            img.onerror = () => {
+                console.error(`Failed to load asset: ${src}`);
+            };
+            this.worldAssets.images[key] = img;
+        });
+    }
+
+    getWorldAsset(key) {
+        const image = this.worldAssets.images[key];
+        if (!image || !image.complete || !image.naturalWidth) {
+            return null;
+        }
+        return image;
     }
     
     loadPlayerSprites() {
@@ -142,9 +182,114 @@ class GraphicsEngine {
             }
         }
     }
+
+    drawAssetBackedTile(x, y, tileType, ctx, meta = {}) {
+        const sample = this.getTileAssetSample(tileType, meta.tileX || 0, meta.tileY || 0);
+        if (!sample) {
+            return false;
+        }
+
+        ctx.drawImage(sample.image, sample.sx, sample.sy, sample.sw, sample.sh, x, y, 32, 32);
+
+        if (tileType === 'door') {
+            ctx.fillStyle = 'rgba(8, 14, 28, 0.4)';
+            ctx.fillRect(x, y + 22, 32, 10);
+        }
+
+        return true;
+    }
+
+    getTileAssetSample(tileType, tileX, tileY) {
+        const sampleDefinitions = {
+            grass: { key: 'flower_meadow', originX: 0.1, originY: 0.18, spreadX: 0.28, spreadY: 0.18 },
+            tall_grass: { key: 'grass_lake_scene', originX: 0.05, originY: 0.02, spreadX: 0.36, spreadY: 0.12 },
+            water: { key: 'grass_lake_scene', originX: 0.24, originY: 0.24, spreadX: 0.22, spreadY: 0.16 },
+            path: { key: 'road', originX: 0.08, originY: 0.08, spreadX: 0.02, spreadY: 0.02 },
+            tree: { key: 'forest_canopy', originX: 0.08, originY: 0.08, spreadX: 0.52, spreadY: 0.34 },
+            dark_tree: { key: 'roadside_trees', originX: 0.04, originY: 0.1, spreadX: 0.04, spreadY: 0.65 },
+            mountain: { key: 'mountain_tops', originX: 0.08, originY: 0.08, spreadX: 0.32, spreadY: 0.24 },
+            door: { key: 'road', originX: 0.08, originY: 0.08, spreadX: 0.02, spreadY: 0.02 }
+        };
+
+        const definition = sampleDefinitions[tileType];
+        if (!definition) {
+            return null;
+        }
+
+        const image = this.getWorldAsset(definition.key);
+        if (!image) {
+            return null;
+        }
+
+        const sw = Math.min(32, image.naturalWidth);
+        const sh = Math.min(32, image.naturalHeight);
+        const maxX = Math.max(0, image.naturalWidth - sw);
+        const maxY = Math.max(0, image.naturalHeight - sh);
+        const seed = (((tileX + 1) * 92821) ^ ((tileY + 1) * 68917)) >>> 0;
+        const offsetX = maxX > 0 ? seed % Math.max(1, Math.floor(maxX * definition.spreadX) + 1) : 0;
+        const offsetY = maxY > 0 ? Math.floor(seed / 17) % Math.max(1, Math.floor(maxY * definition.spreadY) + 1) : 0;
+        const sx = Math.min(maxX, Math.floor(maxX * definition.originX) + offsetX);
+        const sy = Math.min(maxY, Math.floor(maxY * definition.originY) + offsetY);
+
+        return { image, sx, sy, sw, sh };
+    }
+
+    drawDecorations(decorations, ctx, offsetX, offsetY, viewWidth, viewHeight) {
+        const visibleLeft = offsetX - 96;
+        const visibleTop = offsetY - 96;
+        const visibleRight = offsetX + viewWidth + 96;
+        const visibleBottom = offsetY + viewHeight + 96;
+        const orderedDecorations = [...decorations].sort((a, b) => {
+            if ((a.zIndex || 0) !== (b.zIndex || 0)) {
+                return (a.zIndex || 0) - (b.zIndex || 0);
+            }
+            return a.y - b.y;
+        });
+
+        orderedDecorations.forEach(decoration => {
+            const px = decoration.x * 32;
+            const py = decoration.y * 32;
+            const pw = decoration.width * 32;
+            const ph = decoration.height * 32;
+
+            if (px > visibleRight || py > visibleBottom || px + pw < visibleLeft || py + ph < visibleTop) {
+                return;
+            }
+
+            this.drawDecoration(decoration, ctx, px, py, pw, ph);
+        });
+    }
+
+    drawDecoration(decoration, ctx, px, py, pw, ph) {
+        const asset = this.getWorldAsset(decoration.assetKey);
+        if (!asset) {
+            return;
+        }
+
+        ctx.save();
+        ctx.globalAlpha = decoration.opacity ?? 1;
+
+        if (decoration.mode === 'cover') {
+            ctx.drawImage(asset, px, py, pw, ph);
+            ctx.restore();
+            return;
+        }
+
+        const scale = Math.min(pw / asset.naturalWidth, ph / asset.naturalHeight);
+        const drawW = asset.naturalWidth * scale;
+        const drawH = asset.naturalHeight * scale;
+        const dx = px + ((pw - drawW) / 2);
+        const dy = py + (ph - drawH);
+
+        ctx.drawImage(asset, dx, dy, drawW, drawH);
+        ctx.restore();
+    }
     
     // Draw enhanced tile with depth and detail
-    drawTile(x, y, tileType, ctx) {
+    drawTile(x, y, tileType, ctx, meta = {}) {
+        if (this.drawAssetBackedTile(x, y, tileType, ctx, meta)) {
+            return;
+        }
         const colors = this.currentPalette[tileType] || this.palettes.day.grass;
         
         switch(tileType) {
