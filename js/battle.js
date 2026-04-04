@@ -708,8 +708,7 @@ class BattleSystem {
     render(ctx) {
         const width = ctx.canvas.width;
         const height = ctx.canvas.height;
-        
-        // Screen shake effect
+
         if (this.screenShake > 0) {
             ctx.save();
             const dx = (Math.random() - 0.5) * this.screenShake;
@@ -718,43 +717,63 @@ class BattleSystem {
             this.screenShake *= 0.9;
             if (this.screenShake < 0.5) this.screenShake = 0;
         }
-        
-        // Battle background
-        const gradient = ctx.createLinearGradient(0, 0, 0, height);
-        gradient.addColorStop(0, '#202020');
-        gradient.addColorStop(1, '#404040');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, width, height);
-        
-        // Enemy platform
-        ctx.fillStyle = '#606060';
-        ctx.beginPath();
-        ctx.ellipse(width * 0.75, height * 0.35, 80, 30, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Player platform
-        ctx.fillStyle = '#606060';
-        ctx.beginPath();
-        ctx.ellipse(width * 0.25, height * 0.65, 100, 40, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Draw Pokemon
+
+        this.drawBattleBackdrop(ctx, width, height);
+        this.drawBattleBase(ctx, width * 0.76, height * 0.36, 112, 38);
+        this.drawBattleBase(ctx, width * 0.25, height * 0.72, 180, 55);
+
         if (this.enemyActive) {
-            this.drawPokemon(ctx, this.enemyActive, width * 0.75, height * 0.25, true);
-            this.drawHPBar(ctx, this.enemyActive, width * 0.55, height * 0.15, 150, true);
+            this.drawPokemon(ctx, this.enemyActive, width * 0.76, height * 0.28, true);
+            this.drawHPBar(ctx, this.enemyActive, 18, 72, 256, true);
         }
-        
+
         if (this.playerActive) {
-            this.drawPokemon(ctx, this.playerActive, width * 0.25, height * 0.55, false);
-            this.drawHPBar(ctx, this.playerActive, width * 0.15, height * 0.75, 150, false);
+            this.drawPokemon(ctx, this.playerActive, width * 0.22, height * 0.62, false);
+            this.drawHPBar(ctx, this.playerActive, width - 284, height - 238, 266, false);
         }
-        
-        // Message/command box
+
         this.drawCommandBox(ctx, width, height);
-        
+
         if (this.screenShake > 0) {
             ctx.restore();
         }
+    }
+
+    drawBattleBackdrop(ctx, width, height) {
+        const bands = [
+            '#143153', '#1A3C66', '#1E446F', '#214A74', '#26527D',
+            '#2A5A84', '#2D5E88', '#31587B', '#334F6B', '#31455D',
+            '#2D3F56', '#2A384E'
+        ];
+        const bandHeight = Math.ceil((height - 140) / bands.length);
+        for (let i = 0; i < bands.length; i++) {
+            ctx.fillStyle = bands[i];
+            ctx.fillRect(0, i * bandHeight, width, bandHeight + 1);
+        }
+
+        const overlay = ctx.createLinearGradient(0, 0, 0, height - 140);
+        overlay.addColorStop(0, 'rgba(132, 180, 232, 0.14)');
+        overlay.addColorStop(0.55, 'rgba(28, 46, 72, 0.10)');
+        overlay.addColorStop(1, 'rgba(10, 22, 40, 0.22)');
+        ctx.fillStyle = overlay;
+        ctx.fillRect(0, 0, width, height - 140);
+    }
+
+    drawBattleBase(ctx, x, y, rx, ry) {
+        ctx.fillStyle = '#5d5a77';
+        ctx.beginPath();
+        ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#706c88';
+        ctx.beginPath();
+        ctx.ellipse(x - 8, y - 2, rx * 0.82, ry * 0.55, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#4f4b62';
+        ctx.beginPath();
+        ctx.ellipse(x + 12, y + 8, rx * 0.23, ry * 0.2, 0, 0, Math.PI * 2);
+        ctx.fill();
     }
     
     drawPokemon(ctx, pokemon, x, y, isEnemy) {
@@ -822,37 +841,93 @@ class BattleSystem {
     }
     
     drawHPBar(ctx, pokemon, x, y, width, isEnemy) {
-        const height = 12;
-        
-        // Background
-        ctx.fillStyle = '#000';
-        ctx.fillRect(x, y, width, height);
-        
-        // HP bar
-        const hpPercent = pokemon.currentHp / pokemon.maxHp;
-        let hpColor = '#20c020';
-        if (hpPercent < 0.5) hpColor = '#f0e020';
-        if (hpPercent < 0.2) hpColor = '#f02020';
-        
+        const bodyH = isEnemy ? 44 : 66;
+
+        // Top white name plate
+        ctx.fillStyle = '#e9edf2';
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + width - 16, y);
+        ctx.lineTo(x + width, y + 12);
+        ctx.lineTo(x + width - 12, y + 12);
+        ctx.lineTo(x + width - 18, y + 8);
+        ctx.lineTo(x, y + 8);
+        ctx.closePath();
+        ctx.fill();
+
+        // Main black body
+        const bodyY = y + 8;
+        ctx.fillStyle = '#171a1f';
+        ctx.beginPath();
+        ctx.moveTo(x, bodyY);
+        ctx.lineTo(x + width - 20, bodyY);
+        ctx.lineTo(x + width, bodyY + 12);
+        ctx.lineTo(x + width - 8, bodyY + bodyH);
+        ctx.lineTo(x + 8, bodyY + bodyH);
+        ctx.lineTo(x, bodyY + bodyH - 8);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = '#0a0d10';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Name + level
+        ctx.fillStyle = '#111';
+        ctx.font = 'bold 22px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(pokemon.getName(), x + 10, y + 6);
+        ctx.fillText(`Lv${pokemon.level}`, x + width - 88, y + 6);
+
+        // HP bar frame
+        const barX = x + 72;
+        const barY = bodyY + 15;
+        const barW = width - 108;
+        const barH = 10;
+        ctx.fillStyle = '#06090c';
+        ctx.fillRect(barX - 2, barY - 2, barW + 4, barH + 4);
+
+        // HP label
+        ctx.fillStyle = '#f2f2f2';
+        ctx.font = 'italic bold 16px monospace';
+        ctx.fillText('HP', x + 34, barY + 8);
+
+        const hpPercent = Math.max(0, pokemon.currentHp / pokemon.maxHp);
+        let hpColor = '#15c83d';
+        if (hpPercent < 0.5) hpColor = '#e4be2d';
+        if (hpPercent < 0.2) hpColor = '#d43732';
         ctx.fillStyle = hpColor;
-        ctx.fillRect(x + 2, y + 2, Math.max(0, (width - 4) * hpPercent), height - 4);
-        
-        // HP text
-        ctx.fillStyle = '#fff';
-        ctx.font = '12px "Courier New", monospace';
+        ctx.fillRect(barX, barY, Math.floor(barW * hpPercent), barH);
+
+        ctx.fillStyle = '#d4232f';
+        ctx.font = 'bold 17px monospace';
+        ctx.fillText('*', x + width - 24, barY + 11);
+
         if (!isEnemy) {
-            ctx.fillText(`${pokemon.currentHp}/${pokemon.maxHp}`, x, y - 5);
+            ctx.fillStyle = '#e5e5e5';
+            ctx.font = '17px monospace';
+            ctx.fillText(`${pokemon.currentHp}/${pokemon.maxHp}`, x + width - 102, bodyY + bodyH - 8);
+
+            const expX = x + 58;
+            const expY = bodyY + bodyH - 5;
+            const expW = width - 80;
+            ctx.fillStyle = '#00d4ff';
+            ctx.fillRect(expX, expY, expW * 0.55, 4);
+            ctx.fillStyle = '#0d1116';
+            ctx.fillRect(expX + expW * 0.55, expY, expW * 0.45, 4);
+            ctx.fillStyle = '#00d4ff';
+            ctx.font = 'italic bold 16px monospace';
+            ctx.fillText('EXP', x + 10, expY + 6);
         }
     }
     
     drawCommandBox(ctx, width, height) {
-        // Main command box
-        ctx.fillStyle = '#fff';
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 4;
-        ctx.fillRect(20, height - 140, width - 40, 120);
-        ctx.strokeRect(20, height - 140, width - 40, 120);
-        
+        const frameY = height - 136;
+
+        // Red battle frame
+        ctx.fillStyle = '#cb151f';
+        ctx.fillRect(0, frameY - 8, width, 144);
+
         switch (this.battleState) {
             case 'menu':
                 this.drawMainMenu(ctx, width, height);
@@ -875,145 +950,239 @@ class BattleSystem {
     }
     
     drawMainMenu(ctx, width, height) {
-        const menuX = width - 180;
-        const menuY = height - 130;
-        
-        ctx.fillStyle = '#fff';
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 3;
-        ctx.fillRect(menuX, menuY, 140, 100);
-        ctx.strokeRect(menuX, menuY, 140, 100);
-        
-        const options = [['FIGHT', 'BAG'], ['POKéMON', 'RUN']];
-        ctx.font = '16px "Courier New", monospace';
-        ctx.fillStyle = '#000';
-        
+        const promptX = 16;
+        const promptY = height - 126;
+        const promptW = 360;
+        const promptH = 110;
+
+        ctx.fillStyle = '#f2f2f2';
+        ctx.fillRect(promptX, promptY, promptW, promptH);
+        ctx.strokeStyle = '#191919';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(promptX, promptY, promptW, promptH);
+
+        ctx.strokeStyle = '#8de629';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(promptX + 4, promptY + 8);
+        ctx.lineTo(promptX - 8, promptY + promptH / 2);
+        ctx.lineTo(promptX + 4, promptY + promptH - 8);
+        ctx.stroke();
+
+        ctx.fillStyle = '#727272';
+        ctx.font = '34px monospace';
+        ctx.fillText('What will', promptX + 16, promptY + 40);
+        ctx.fillText(`${this.playerActive?.getName() || 'POKEMON'} do?`, promptX + 16, promptY + 82);
+
+        const options = [['FIGHT', 'BAG'], ['POKEMON', 'RUN']];
+        const buttonW = 116;
+        const buttonH = 40;
+        const startX = width - 246;
+        const startY = height - 124;
+
         for (let row = 0; row < 2; row++) {
             for (let col = 0; col < 2; col++) {
-                const x = menuX + 10 + col * 65;
-                const y = menuY + 25 + row * 40;
-                
-                // Highlight selected
-                if (this.menuSelection.row === row && this.menuSelection.col === col) {
-                    ctx.fillStyle = '#4060a0';
-                    ctx.fillRect(x - 5, y - 15, 60, 25);
-                    ctx.fillStyle = '#fff';
-                } else {
-                    ctx.fillStyle = '#000';
-                }
-                
-                ctx.fillText(options[row][col], x, y);
+                const selected = this.menuSelection.row === row && this.menuSelection.col === col;
+                const bx = startX + col * 120;
+                const by = startY + row * 45;
+                const color = row === 0 ? '#3f3f45' : '#22272f';
+                this.drawMenuButton(ctx, bx, by, buttonW, buttonH, options[row][col], selected, color);
             }
         }
-        
-        // Message area
-        ctx.fillStyle = '#000';
-        ctx.font = '18px "Courier New", monospace';
-        ctx.fillText('What will', 40, height - 100);
-        ctx.fillText(`${this.playerActive?.getName()} do?`, 40, height - 75);
     }
     
     drawFightMenu(ctx, width, height) {
-        ctx.fillStyle = '#000';
-        ctx.font = '16px "Courier New", monospace';
-        
-        // Draw moves in 2x2 grid
+        const startX = 18;
+        const startY = height - 124;
+        const btnW = 245;
+        const btnH = 46;
+
+        const typeColors = {
+            normal: '#c9c44f', fire: '#da5e24', water: '#2f80d4', electric: '#d9bf20',
+            grass: '#49a437', ice: '#58b3bf', fighting: '#ad3d35', poison: '#9247aa',
+            ground: '#a7894d', flying: '#6375cc', psychic: '#cf4a88', bug: '#6d9c30',
+            rock: '#968241', ghost: '#65589a', dragon: '#6253be', dark: '#525252',
+            steel: '#77889b', fairy: '#c16795'
+        };
+
         for (let i = 0; i < 4; i++) {
             const row = Math.floor(i / 2);
             const col = i % 2;
-            const x = 40 + col * 280;
-            const y = height - 110 + row * 40;
-            
+            const x = startX + col * (btnW + 8);
+            const y = startY + row * (btnH + 8);
+
             if (i < this.playerActive.moves.length) {
                 const move = this.playerActive.moves[i];
                 const moveData = getMove(move.id);
-                
-                // Highlight
-                if (this.moveSelection === i) {
-                    ctx.fillStyle = '#4060a0';
-                    ctx.fillRect(x - 5, y - 15, 250, 30);
-                    ctx.fillStyle = '#fff';
-                } else {
-                    ctx.fillStyle = move.pp === 0 ? '#888' : '#000';
-                }
-                
-                ctx.fillText(`${moveData.name}`, x, y);
-                ctx.fillText(`PP ${move.pp}/${move.maxPp}`, x + 160, y);
+                const baseColor = typeColors[moveData.type] || '#666';
+                this.drawMoveButton(ctx, x, y, btnW, btnH, moveData.name, this.moveSelection === i, baseColor);
+            } else {
+                this.drawMoveButton(ctx, x, y, btnW, btnH, '-', false, '#666');
             }
         }
-        
-        // Show move info for selected
+
         const selectedMove = this.playerActive.moves[this.moveSelection];
-        if (selectedMove) {
-            const moveData = getMove(selectedMove.id);
-            ctx.fillStyle = '#666';
-            ctx.font = '14px "Courier New", monospace';
-            ctx.fillText(`Type: ${moveData.type.toUpperCase()} | Power: ${moveData.power || '-'} | Acc: ${moveData.accuracy}%`, 40, height - 45);
-        }
+        if (!selectedMove) return;
+        const data = getMove(selectedMove.id);
+
+        const infoX = width - 118;
+        const infoY = height - 124;
+        const infoW = 104;
+        const infoH = 100;
+
+        ctx.fillStyle = '#f0f0f0';
+        ctx.fillRect(infoX, infoY, infoW, infoH);
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(infoX, infoY, infoW, infoH);
+
+        ctx.fillStyle = '#777';
+        ctx.font = 'bold 20px monospace';
+        ctx.fillText(data.type.toUpperCase(), infoX + 8, infoY + 30);
+        ctx.font = '22px monospace';
+        ctx.fillText(`PP ${selectedMove.pp}/${selectedMove.maxPp}`, infoX + 8, infoY + 68);
     }
     
     drawMessage(ctx, width, height) {
-        ctx.fillStyle = '#000';
-        ctx.font = '18px "Courier New", monospace';
-        
-        // Wrap text if needed
-        const maxWidth = width - 60;
-        const words = this.message.split(' ');
+        const boxX = 16;
+        const boxY = height - 126;
+        const boxW = width - 32;
+        const boxH = 110;
+
+        ctx.fillStyle = '#efefef';
+        ctx.fillRect(boxX, boxY, boxW, boxH);
+        ctx.strokeStyle = '#1b1b1b';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+        ctx.strokeStyle = '#8de629';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(boxX + 4, boxY + 8);
+        ctx.lineTo(boxX - 8, boxY + boxH / 2);
+        ctx.lineTo(boxX + 4, boxY + boxH - 8);
+        ctx.stroke();
+
+        const text = this.message || '';
+        const maxWidth = boxW - 44;
+        const words = text.split(' ');
         let line = '';
-        let y = height - 100;
-        
+        let y = boxY + 42;
+
+        ctx.fillStyle = '#696969';
+        ctx.font = '34px monospace';
         for (const word of words) {
             const testLine = line + word + ' ';
-            const metrics = ctx.measureText(testLine);
-            
-            if (metrics.width > maxWidth && line !== '') {
-                ctx.fillText(line, 40, y);
+            if (ctx.measureText(testLine).width > maxWidth && line) {
+                ctx.fillText(line, boxX + 16, y);
                 line = word + ' ';
-                y += 25;
+                y += 36;
             } else {
                 line = testLine;
             }
         }
-        ctx.fillText(line, 40, y);
-        
-        // Continue indicator
-        ctx.fillStyle = '#4060a0';
+        if (line) ctx.fillText(line, boxX + 16, y);
+
+        ctx.fillStyle = '#9a9a9a';
         ctx.beginPath();
-        ctx.moveTo(width - 50, height - 50);
-        ctx.lineTo(width - 40, height - 40);
-        ctx.lineTo(width - 50, height - 30);
+        ctx.moveTo(boxX + boxW - 28, boxY + boxH - 24);
+        ctx.lineTo(boxX + boxW - 14, boxY + boxH - 24);
+        ctx.lineTo(boxX + boxW - 21, boxY + boxH - 12);
+        ctx.closePath();
         ctx.fill();
     }
     
     drawItemMenu(ctx, width, height) {
-        ctx.fillStyle = '#000';
-        ctx.font = '16px "Courier New", monospace';
-        ctx.fillText('Items:', 40, height - 110);
-        ctx.fillText('[Items not yet implemented in UI]', 40, height - 80);
-        ctx.fillText('Press X to go back', 40, height - 50);
+        this.message = 'Bag UI coming soon. Press X to go back.';
+        this.drawMessage(ctx, width, height);
     }
     
     drawSwitchMenu(ctx, width, height) {
-        ctx.fillStyle = '#000';
-        ctx.font = '16px "Courier New", monospace';
-        ctx.fillText('Switch to:', 40, height - 110);
-        
+        const boxX = 16;
+        const boxY = height - 126;
+        const boxW = width - 32;
+        const boxH = 110;
+
+        ctx.fillStyle = '#efefef';
+        ctx.fillRect(boxX, boxY, boxW, boxH);
+        ctx.strokeStyle = '#1b1b1b';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+        ctx.fillStyle = '#777';
+        ctx.font = '26px monospace';
+        ctx.fillText('Switch to:', boxX + 12, boxY + 30);
+
         for (let i = 0; i < this.playerParty.length; i++) {
             const p = this.playerParty[i];
-            const y = height - 85 + i * 25;
-            
+            const y = boxY + 58 + i * 22;
+
+            ctx.fillStyle = i === this.partySelection ? '#2a2f36' : '#777';
             if (i === this.partySelection) {
-                ctx.fillStyle = '#4060a0';
-                ctx.fillRect(35, y - 15, 200, 22);
-                ctx.fillStyle = '#fff';
-            } else {
-                ctx.fillStyle = p.isFainted ? '#888' : '#000';
+                ctx.fillRect(boxX + 10, y - 17, boxW - 20, 20);
+                ctx.fillStyle = '#f1f1f1';
             }
-            
+
             const status = p.status ? `[${p.status.toUpperCase()[0]}]` : '';
-            const fainted = p.isFainted ? ' [FAINTED]' : '';
-            ctx.fillText(`${p.getName()} Lv${p.level} ${status}${fainted}`, 40, y);
+            const fainted = p.isFainted ? '[FAINTED]' : '';
+            ctx.fillText(`${p.getName()} Lv${p.level} ${status} ${fainted}`.trim(), boxX + 14, y);
         }
+    }
+
+    drawMenuButton(ctx, x, y, w, h, text, selected, baseColor) {
+        ctx.fillStyle = selected ? '#79d61d' : '#161a21';
+        ctx.beginPath();
+        ctx.moveTo(x + 12, y);
+        ctx.lineTo(x + w - 12, y);
+        ctx.lineTo(x + w, y + h / 2);
+        ctx.lineTo(x + w - 12, y + h);
+        ctx.lineTo(x + 12, y + h);
+        ctx.lineTo(x, y + h / 2);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = selected ? '#2a2a2a' : baseColor;
+        ctx.beginPath();
+        ctx.moveTo(x + 15, y + 3);
+        ctx.lineTo(x + w - 15, y + 3);
+        ctx.lineTo(x + w - 4, y + h / 2);
+        ctx.lineTo(x + w - 15, y + h - 3);
+        ctx.lineTo(x + 15, y + h - 3);
+        ctx.lineTo(x + 4, y + h / 2);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = selected ? '#0f1114' : '#f4f4f4';
+        ctx.font = 'bold 20px monospace';
+        ctx.fillText(text, x + 24, y + 27);
+    }
+
+    drawMoveButton(ctx, x, y, w, h, label, selected, baseColor) {
+        ctx.fillStyle = selected ? '#efd23b' : '#262a32';
+        ctx.beginPath();
+        ctx.moveTo(x + 12, y);
+        ctx.lineTo(x + w - 12, y);
+        ctx.lineTo(x + w, y + h / 2);
+        ctx.lineTo(x + w - 12, y + h);
+        ctx.lineTo(x + 12, y + h);
+        ctx.lineTo(x, y + h / 2);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = selected ? '#f4f4f4' : baseColor;
+        ctx.beginPath();
+        ctx.moveTo(x + 14, y + 4);
+        ctx.lineTo(x + w - 14, y + 4);
+        ctx.lineTo(x + w - 4, y + h / 2);
+        ctx.lineTo(x + w - 14, y + h - 4);
+        ctx.lineTo(x + 14, y + h - 4);
+        ctx.lineTo(x + 4, y + h / 2);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#f0f0f0';
+        ctx.font = '34px monospace';
+        ctx.fillText(label, x + 18, y + 33);
     }
 }
 
