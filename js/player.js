@@ -11,8 +11,6 @@ class Player {
         this.walkFrame = 0;
         this.walkFrameTimer = 0;
         this.moveSpeed = 250; // Milliseconds per tile (lower is faster)
-        this.runSpeedMultiplier = 1.8; // How much faster running is
-        this.isRunning = false;
         this.isBiking = false; // Future proofing
         this.moveFrom = { x: x, y: y };
         this.moveTo = { x: x, y: y };
@@ -27,7 +25,8 @@ class Player {
             hat: '#ff6b6b',
             shirt: '#4169e1',
             pants: '#2c3e50',
-            shoes: '#1a1a1a'
+            shoes: '#000',
+            bag: '#8b4513'
         };
     }
     
@@ -42,6 +41,7 @@ class Player {
         if (map.isWalkable(targetX, targetY)) {
             this.isMoving = true;
             this.moveProgress = 0;
+            this.moveElapsedMs = 0;
             this.walkFrame = 0;
             this.walkFrameTimer = 0;
             this.moveFrom = { x: this.x, y: this.y };
@@ -60,9 +60,7 @@ class Player {
         this.justCompletedMove = false;
 
         if (this.isMoving) {
-            const currentSpeed = this.isBiking ? this.moveSpeed / 2.5 : 
-                                 this.isRunning ? this.moveSpeed / this.runSpeedMultiplier : 
-                                 this.moveSpeed;
+            const currentSpeed = this.isBiking ? this.moveSpeed / 2.5 : this.moveSpeed;
 
             this.moveElapsedMs += deltaTime;
             this.moveProgress = Math.min(1, this.moveElapsedMs / currentSpeed);

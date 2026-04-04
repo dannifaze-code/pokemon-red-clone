@@ -102,46 +102,54 @@ class Game {
     }
     
     setupEventListeners() {
-        window.addEventListener('keydown', (e) => this.handleInput(e));
-        window.addEventListener('keyup', (e) => this.handleKeyUp(e));
+        window.addEventListener('keydown', (e) => this.handleInput(e, true));
+        window.addEventListener('keyup', (e) => this.handleInput(e, false));
     }
     
-    handleInput(e) {
-        if (this.state === 'dialog') {
-            if (e.key === 'z' || e.key === ' ' || e.key === 'Enter') {
-                this.advanceDialog();
+    handleInput(e, isKeyDown) {
+        if (this.state === 'title' || this.state === 'dialog' || this.state === 'menu' || this.battleSystem.active) {
+            return;
+        }
+
+        const key = e.key.toLowerCase();
+
+        const directionMap = {
+            arrowup: 'ArrowUp',
+            w: 'ArrowUp',
+            arrowdown: 'ArrowDown',
+            s: 'ArrowDown',
+            arrowleft: 'ArrowLeft',
+            a: 'ArrowLeft',
+            arrowright: 'ArrowRight',
+            d: 'ArrowRight'
+        };
+
+        const mappedDirection = directionMap[key];
+        if (mappedDirection) {
+            e.preventDefault();
+            if (isKeyDown) {
+                this.pressedDirections.add(mappedDirection);
+                this.lastDirectionPressed = mappedDirection;
+            } else {
+                this.pressedDirections.delete(mappedDirection);
+                if (this.lastDirectionPressed === mappedDirection) {
+                    this.lastDirectionPressed = null;
+                }
             }
             return;
         }
-        
-        if (this.state === 'menu') {
-            this.handleMenuInput(e);
-            return;
-        }
-        
-        if (this.state === 'battle') {
-            this.battle.handleInput(e.key);
-            return;
-        }
 
-        if (e.key.startsWith('Arrow')) {
-            e.preventDefault();
-            this.pressedDirections.add(e.key);
-            this.lastDirectionPressed = e.key;
-            return;
-        }
-        
-        switch(e.key) {
+        switch (key) {
             case 'z':
             case ' ':
-                this.handleInteract();
-                break;
-            case 'x':
-                this.openMenu();
+            case 'enter':
+                if (isKeyDown && !this.player.isMoving) {
+                    this.handleInteract();
+                }
                 break;
         }
     }
-
+    
     handleKeyUp(e) {
         if (this.state !== 'world') return;
         if (!e.key.startsWith('Arrow')) return;

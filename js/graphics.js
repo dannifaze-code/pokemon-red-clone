@@ -40,35 +40,39 @@ class GraphicsEngine {
     }
     
     loadPlayerSprites() {
-        const directions = ['down', 'up', 'left', 'right'];
-        const actions = ['idle', 'walk_1', 'walk_2', 'run_1', 'run_2', 'bike'];
+        const requiredSprites = [
+            'player_idle_down',
+            'player_walk_down_1',
+            'player_walk_down_2',
+            'player_idle_back_1', // Used as up idle
+            'player_run_up_n1',   // Used as up walk 1
+            'player_run_up_n2',   // Used as up walk 2
+            'player_idle_left',
+            'player_walk_left_1',
+            'player_idle_right_1', // Used as right idle
+            'player_walk_right_2'  // Used as right walk
+        ];
+        
         let loadedCount = 0;
-        const totalSprites = directions.length * actions.length;
+        const totalSprites = requiredSprites.length;
 
-        directions.forEach(dir => {
-            this.playerSprites.images[dir] = {};
-            actions.forEach(action => {
-                const img = new Image();
-                const actionName = action === 'walk_1' || action === 'walk_2' ? 'walk' :
-                                   action === 'run_1' || action === 'run_2' ? 'run' : action;
-                const frameSuffix = action.includes('_1') ? '_1' : action.includes('_2') ? '_2' : '';
-                
-                img.src = `assets/player_${actionName}_${dir}${frameSuffix}.png`;
-                
-                img.onload = () => {
-                    // Pre-process image to remove background
-                    this.playerSprites.images[dir][action] = this.processSpriteImage(img);
-                    loadedCount++;
-                    if (loadedCount === totalSprites) {
-                        this.playerSprites.loaded = true;
-                        console.log('All player sprites loaded successfully');
-                    }
-                };
-                img.onerror = () => {
-                    console.error(`Failed to load sprite: ${img.src}`);
-                    this.playerSprites.failed = true;
-                };
-            });
+        requiredSprites.forEach(spriteName => {
+            const img = new Image();
+            img.src = `assets/${spriteName}.png`;
+            
+            img.onload = () => {
+                // Pre-process image to remove background
+                this.playerSprites.images[spriteName] = this.processSpriteImage(img);
+                loadedCount++;
+                if (loadedCount === totalSprites) {
+                    this.playerSprites.loaded = true;
+                    console.log('All player sprites loaded successfully');
+                }
+            };
+            img.onerror = () => {
+                console.error(`Failed to load sprite: ${img.src}`);
+                this.playerSprites.failed = true;
+            };
         });
     }
 
@@ -517,8 +521,6 @@ class GraphicsEngine {
     
     // Draw player sprite
     drawPlayerSprite(x, y, player, ctx, alpha = 0) {
-        const destSize = 32;
-
         if (!this.playerSprites.loaded || this.playerSprites.failed) {
             this.drawProceduralPlayerSprite(x, y, player, ctx);
             return;
@@ -529,29 +531,58 @@ class GraphicsEngine {
         else if (player.direction.x < 0) directionStr = 'left';
         else if (player.direction.y < 0) directionStr = 'up';
 
-        let actionStr = 'idle';
-        if (player.isMoving) {
-            // Cycle between walk_1 and walk_2
-            // walkFrame goes 0, 1, 2, 3. We want 0=idle, 1=walk_1, 2=idle, 3=walk_2
-            const frame = player.walkFrame % 4;
-            if (frame === 1) actionStr = player.isRunning ? 'run_1' : 'walk_1';
-            else if (frame === 3) actionStr = player.isRunning ? 'run_2' : 'walk_2';
-            else actionStr = 'idle';
-        }
+        let spriteName = '';
         
-        // Future proofing for bike state
-        if (player.isBiking) {
-            actionStr = 'bike';
+        // Determine which specific file to use based on direction and walk cycle
+        if (!player.isMoving) {
+            switch (directionStr) {
+                case 'down': spriteName = 'player_idle_down'; break;
+                case 'up': spriteName = 'player_idle_back_1'; break;
+                case 'left': spriteName = 'player_idle_left'; break;
+                case 'right': spriteName = 'player_idle_right_1'; break;
+            }
+        } else {
+            const frame = player.walkFrame % 4; // 0: idle, 1: step1, 2: idle, 3: step2
+            const isStep = frame === 1 || frame === 3;
+            const stepNum = frame === 1 ? '1' : '2';
+
+            if (!isStep) {
+                // Idle frames while moving (middle of stride)
+                switch (directionStr) {
+                    case 'down': spriteName = 'player_idle_down'; break;
+                    case 'up': spriteName = 'player_idle_back_1'; break;
+                    case 'left': spriteName = 'player_idle_left'; break;
+                    case 'right': spriteName = 'player_idle_right_1'; break;
+                }
+            } else {
+                // Stepping frames
+                switch (directionStr) {
+                    case 'down': 
+                        spriteName = `player_walk_down_${stepNum}`; 
+                        break;
+                    case 'up': 
+                        // User named these "run_up_n1/n2" but we're using them as walk frames
+                        spriteName = `player_run_up_n${stepNum}`; 
+                        break;
+                    case 'left': 
+                        // Alternate between idle and walk for a 2-frame animation since we only have 1 walk frame
+                        spriteName = stepNum === '1' ? 'player_walk_left_1' : 'player_idle_left'; 
+                        break;
+                    case 'right': 
+                        // Alternate between idle and walk for a 2-frame animation since we only have 1 walk frame
+                        spriteName = stepNum === '1' ? 'player_walk_right_2' : 'player_idle_right_1'; 
+                        break;
+                }
+            }
         }
 
-        const sprite = this.playerSprites.images[directionStr][actionStr];
+        const sprite = this.playerSprites.images[spriteName];
         
         if (sprite) {
             const prevSmoothing = ctx.imageSmoothingEnabled;
             ctx.imageSmoothingEnabled = false;
             
             // Center the sprite in the 32x32 destination area
-            // Our raw images are likely larger (e.g. 50-80px), so we scale them down
             const actualW = sprite.width;
             const actualH = sprite.height;
             const maxW = 28;
@@ -566,6 +597,7 @@ class GraphicsEngine {
             ctx.drawImage(sprite, dx, dy, drawW, drawH);
             ctx.imageSmoothingEnabled = prevSmoothing;
         } else {
+            // Fallback if specific sprite fails
             this.drawProceduralPlayerSprite(x, y, player, ctx);
         }
     }
