@@ -493,14 +493,17 @@ class GraphicsEngine {
 
     extractEmbeddedSpriteGrid(sheet) {
         // Hardcoded coordinates based on the actual 455x435 Piskel screenshot
-        // The 4x4 sprite grid is in the center-right portion
+        // The 4x4 sprite grid is on the right side of the image
         console.log('Sprite sheet dimensions:', sheet.width, 'x', sheet.height);
         
-        // For 455x435 image: grid starts around x=152, y=52, size=296x296
-        const gridX = 152;
-        const gridY = 52;
-        const gridSize = 296;
-        const cellSize = 74; // 296 / 4 = 74
+        // Layout analysis:
+        // - Left panel (selected frame + preview): ~150px
+        // - Center palette strip: ~15px
+        // - Right panel (4x4 grid): ~290px starting around x=165
+        // Grid starts around x=165, y=55 with cell size ~72px
+        const gridX = 165;
+        const gridY = 55;
+        const cellSize = 72; // 288 / 4 = 72 for a ~288px grid
         
         console.log('Grid extraction:', { gridX, gridY, cellSize });
 
