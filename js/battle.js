@@ -724,12 +724,12 @@ class BattleSystem {
 
         if (this.enemyActive) {
             this.drawPokemon(ctx, this.enemyActive, width * 0.76, height * 0.28, true);
-            this.drawHPBar(ctx, this.enemyActive, 18, 72, 256, true);
+            this.drawHPBar(ctx, this.enemyActive, 26, 72, 248, true);
         }
 
         if (this.playerActive) {
             this.drawPokemon(ctx, this.playerActive, width * 0.22, height * 0.62, false);
-            this.drawHPBar(ctx, this.playerActive, width - 284, height - 238, 266, false);
+            this.drawHPBar(ctx, this.playerActive, width - 286, height - 236, 254, false);
         }
 
         this.drawCommandBox(ctx, width, height);
@@ -821,12 +821,7 @@ class BattleSystem {
             ctx.fillRect(x - size/2 - 5, y - size/2, 8, 8);
         }
         
-        // Name and level
-        ctx.fillStyle = '#fff';
-        ctx.font = '16px "Courier New", monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${pokemon.getName()} Lv${pokemon.level}`, x, y - size/2 - 15);
-        ctx.textAlign = 'left';
+        // Keep sprite-only display here (name/level shown in HP panels)
     }
     
     getStatusColor(status) {
@@ -874,10 +869,10 @@ class BattleSystem {
 
         // Name + level
         ctx.fillStyle = '#111';
-        ctx.font = 'bold 22px monospace';
+        ctx.font = 'bold 15px monospace';
         ctx.textAlign = 'left';
         ctx.fillText(pokemon.getName(), x + 10, y + 6);
-        ctx.fillText(`Lv${pokemon.level}`, x + width - 88, y + 6);
+        ctx.fillText(`Lv${pokemon.level}`, x + width - 74, y + 6);
 
         // HP bar frame
         const barX = x + 72;
@@ -889,7 +884,7 @@ class BattleSystem {
 
         // HP label
         ctx.fillStyle = '#f2f2f2';
-        ctx.font = 'italic bold 16px monospace';
+        ctx.font = 'italic bold 13px monospace';
         ctx.fillText('HP', x + 34, barY + 8);
 
         const hpPercent = Math.max(0, pokemon.currentHp / pokemon.maxHp);
@@ -900,13 +895,13 @@ class BattleSystem {
         ctx.fillRect(barX, barY, Math.floor(barW * hpPercent), barH);
 
         ctx.fillStyle = '#d4232f';
-        ctx.font = 'bold 17px monospace';
+        ctx.font = 'bold 13px monospace';
         ctx.fillText('*', x + width - 24, barY + 11);
 
         if (!isEnemy) {
             ctx.fillStyle = '#e5e5e5';
-            ctx.font = '17px monospace';
-            ctx.fillText(`${pokemon.currentHp}/${pokemon.maxHp}`, x + width - 102, bodyY + bodyH - 8);
+            ctx.font = 'bold 11px monospace';
+            ctx.fillText(`${pokemon.currentHp}/${pokemon.maxHp}`, x + width - 86, bodyY + bodyH - 8);
 
             const expX = x + 58;
             const expY = bodyY + bodyH - 5;
@@ -916,7 +911,7 @@ class BattleSystem {
             ctx.fillStyle = '#0d1116';
             ctx.fillRect(expX + expW * 0.55, expY, expW * 0.45, 4);
             ctx.fillStyle = '#00d4ff';
-            ctx.font = 'italic bold 16px monospace';
+            ctx.font = 'italic bold 13px monospace';
             ctx.fillText('EXP', x + 10, expY + 6);
         }
     }
@@ -969,21 +964,21 @@ class BattleSystem {
         ctx.lineTo(promptX + 4, promptY + promptH - 8);
         ctx.stroke();
 
-        ctx.fillStyle = '#727272';
-        ctx.font = '34px monospace';
+        ctx.fillStyle = '#6a6a6a';
+        ctx.font = '16px monospace';
         ctx.fillText('What will', promptX + 16, promptY + 40);
-        ctx.fillText(`${this.playerActive?.getName() || 'POKEMON'} do?`, promptX + 16, promptY + 82);
+        ctx.fillText(`${this.playerActive?.getName() || 'POKEMON'} do?`, promptX + 16, promptY + 78);
 
         const options = [['FIGHT', 'BAG'], ['POKEMON', 'RUN']];
-        const buttonW = 116;
+        const buttonW = 108;
         const buttonH = 40;
-        const startX = width - 246;
+        const startX = width - 230;
         const startY = height - 124;
 
         for (let row = 0; row < 2; row++) {
             for (let col = 0; col < 2; col++) {
                 const selected = this.menuSelection.row === row && this.menuSelection.col === col;
-                const bx = startX + col * 120;
+                const bx = startX + col * 112;
                 const by = startY + row * 45;
                 const color = row === 0 ? '#3f3f45' : '#22272f';
                 this.drawMenuButton(ctx, bx, by, buttonW, buttonH, options[row][col], selected, color);
@@ -994,7 +989,7 @@ class BattleSystem {
     drawFightMenu(ctx, width, height) {
         const startX = 18;
         const startY = height - 124;
-        const btnW = 245;
+        const btnW = 236;
         const btnH = 46;
 
         const typeColors = {
@@ -1008,7 +1003,7 @@ class BattleSystem {
         for (let i = 0; i < 4; i++) {
             const row = Math.floor(i / 2);
             const col = i % 2;
-            const x = startX + col * (btnW + 8);
+            const x = startX + col * (btnW + 10);
             const y = startY + row * (btnH + 8);
 
             if (i < this.playerActive.moves.length) {
@@ -1025,9 +1020,9 @@ class BattleSystem {
         if (!selectedMove) return;
         const data = getMove(selectedMove.id);
 
-        const infoX = width - 118;
+        const infoX = width - 104;
         const infoY = height - 124;
-        const infoW = 104;
+        const infoW = 90;
         const infoH = 100;
 
         ctx.fillStyle = '#f0f0f0';
@@ -1037,9 +1032,9 @@ class BattleSystem {
         ctx.strokeRect(infoX, infoY, infoW, infoH);
 
         ctx.fillStyle = '#777';
-        ctx.font = 'bold 20px monospace';
+        ctx.font = 'bold 12px monospace';
         ctx.fillText(data.type.toUpperCase(), infoX + 8, infoY + 30);
-        ctx.font = '22px monospace';
+        ctx.font = 'bold 14px monospace';
         ctx.fillText(`PP ${selectedMove.pp}/${selectedMove.maxPp}`, infoX + 8, infoY + 68);
     }
     
@@ -1069,14 +1064,14 @@ class BattleSystem {
         let line = '';
         let y = boxY + 42;
 
-        ctx.fillStyle = '#696969';
-        ctx.font = '34px monospace';
+        ctx.fillStyle = '#6a6a6a';
+        ctx.font = '16px monospace';
         for (const word of words) {
             const testLine = line + word + ' ';
             if (ctx.measureText(testLine).width > maxWidth && line) {
                 ctx.fillText(line, boxX + 16, y);
                 line = word + ' ';
-                y += 36;
+                y += 24;
             } else {
                 line = testLine;
             }
@@ -1110,7 +1105,7 @@ class BattleSystem {
         ctx.strokeRect(boxX, boxY, boxW, boxH);
 
         ctx.fillStyle = '#777';
-        ctx.font = '26px monospace';
+        ctx.font = '16px monospace';
         ctx.fillText('Switch to:', boxX + 12, boxY + 30);
 
         for (let i = 0; i < this.playerParty.length; i++) {
@@ -1153,8 +1148,8 @@ class BattleSystem {
         ctx.fill();
 
         ctx.fillStyle = selected ? '#0f1114' : '#f4f4f4';
-        ctx.font = 'bold 20px monospace';
-        ctx.fillText(text, x + 24, y + 27);
+        ctx.font = 'bold 12px monospace';
+        ctx.fillText(text, x + 22, y + 26);
     }
 
     drawMoveButton(ctx, x, y, w, h, label, selected, baseColor) {
@@ -1180,9 +1175,9 @@ class BattleSystem {
         ctx.closePath();
         ctx.fill();
 
-        ctx.fillStyle = '#f0f0f0';
-        ctx.font = '34px monospace';
-        ctx.fillText(label, x + 18, y + 33);
+        ctx.fillStyle = selected ? '#171717' : '#f0f0f0';
+        ctx.font = 'bold 12px monospace';
+        ctx.fillText(label, x + 16, y + 29);
     }
 }
 
