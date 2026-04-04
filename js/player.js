@@ -17,6 +17,8 @@ class Player {
         this.walkFrame = 0;
         this.walkFrameTimer = 0;
         this.walkFrameIntervalMs = 80;
+
+        this.justCompletedMove = false;
         
         this.TILE_SIZE = 32;
         
@@ -72,6 +74,7 @@ class Player {
                 this.isMoving = false;
                 this.moveProgress = 0;
                 this.moveElapsedMs = 0;
+                this.justCompletedMove = true;
             }
         } else {
             this.walkFrame = 0;

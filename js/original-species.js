@@ -277,6 +277,41 @@ const ORIGINAL_SPECIES = {
         description: 'A powerful electric creature with lightning speed.'
     },
     
+    // Rock / Ground types (mid-route encounters)
+    ROCKCRUSH: {
+        id: 74,
+        name: 'ROCKCRUSH',
+        types: ['rock'],
+        baseStats: { hp: 45, attack: 55, defense: 70, spAttack: 35, spDefense: 50, speed: 25 },
+        learnset: {
+            1: ['TACKLE', 'DEFENSE_CURL'],
+            10: ['ROCK_THROW'],
+            20: ['ROCK_SLIDE']
+        },
+        evolution: null,
+        catchRate: 120,
+        expYield: 91,
+        growthRate: 'medium_slow',
+        description: 'A stubborn rock creature that uses its dense body as a battering ram.'
+    },
+    BURROWMOLE: {
+        id: 50,
+        name: 'BURROWMOLE',
+        types: ['normal', 'ground'],
+        baseStats: { hp: 50, attack: 55, defense: 45, spAttack: 35, spDefense: 40, speed: 50 },
+        learnset: {
+            1: ['SCRATCH', 'GROWL'],
+            5: ['DIG'],
+            14: ['SAND_ATTACK'],
+            20: ['SLASH']
+        },
+        evolution: null,
+        catchRate: 190,
+        expYield: 75,
+        growthRate: 'medium_fast',
+        description: 'A burrowing creature that navigates underground tunnels at high speed.'
+    },
+
     // Legendary
     MYSTICORE: {
         id: 150,

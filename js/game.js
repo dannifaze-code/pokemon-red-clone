@@ -36,7 +36,7 @@ class Game {
     }
     
     init() {
-        this.player = new Player(10, 8);
+        this.player = new Player(75, 87);
         this.map = new GameMap();
         this.battle = new BattleSystem(this);
         this.saveSystem = new SaveSystem(this);
@@ -61,8 +61,8 @@ class Game {
             nuzlockeMode: false,
             runningShoes: true
         };
-        this.lastHealX = 10;
-        this.lastHealY = 8;
+        this.lastHealX = 75;
+        this.lastHealY = 87;
 
         // Multi-page dialog state
         this.dialogPages = [];
@@ -310,13 +310,84 @@ class Game {
             const lines = signId ? getDialog(signId, this.storyProgress) : ['...'];
             this.showDialogPages(lines);
         } else if (tile === 'door') {
-            // Entering prof lab
-            const lines = getDialog('professor', this.storyProgress);
-            this.showDialogPages(lines);
-        } else if (tile === 'grass') {
-            if (Math.random() < 0.4) {
-                this.startBattle();
+            if (this.map.isLabDoor(facingX, facingY)) {
+                const lines = getDialog('professor', this.storyProgress);
+                this.showDialogPages(lines);
+            } else if (this.map.isHealCenter(facingX, facingY)) {
+                this.healParty();
+            } else if (this.map.isGymDoor(facingX, facingY)) {
+                this.triggerGymBattle(facingX, facingY);
+            } else {
+                this.showDialogPages(['The door is locked.', 'No one answered.']);
             }
+        }
+    }
+
+    healParty() {
+        for (const p of this.party) {
+            p.currentHp = p.maxHp;
+            p.status = null;
+            p.isFainted = false;
+            if (p.moves) {
+                for (const move of p.moves) {
+                    if (move) move.currentPP = move.maxPP || move.pp || 35;
+                }
+            }
+        }
+        this.lastHealX = this.player.x;
+        this.lastHealY = this.player.y;
+        this.showDialogPages([
+            'HEAL CENTER: Welcome, traveller!',
+            'We will restore your creatures to full health.',
+            '...',
+            'Your team has been fully healed!',
+            'We hope to see you again!'
+        ]);
+    }
+
+    triggerGymBattle(doorX, doorY) {
+        const leaderId = this.map.getGymLeaderAt(doorX, doorY);
+        if (!leaderId) return;
+
+        const leader = GYM_LEADERS[leaderId];
+        if (!leader) return;
+
+        if (this.defeatedTrainers.includes(leaderId)) {
+            this.showDialogPages([
+                `${leader.name}: You have proven yourself, ${PLAYER_NAME}.`,
+                `${leader.name}: The ${leader.badge} is yours. Keep moving forward.`
+            ]);
+            return;
+        }
+
+        const preBattleLines = getDialog(leaderId, this.storyProgress)
+            .filter(l => !l.startsWith('['));
+
+        this.showDialogPages(preBattleLines, () => {
+            const enemyParty = leader.party.map(e => new Pokemon(e.species, e.level));
+            this.state = 'battle';
+            this.battle.startBattle(enemyParty, 'trainer', leader.name);
+
+            const origEnd = this.battle.end.bind(this.battle);
+            this.battle.end = () => {
+                origEnd();
+                this.battle.end = origEnd;
+                this.defeatedTrainers.push(leaderId);
+                this.checkGymBadge(leaderId);
+            };
+        });
+    }
+
+    checkGymBadge(leaderId) {
+        const leader = GYM_LEADERS[leaderId];
+        if (!leader || !leader.badge) return;
+        if (!this.player.badges.includes(leader.badge)) {
+            this.player.badges.push(leader.badge);
+            this.showDialogPages([
+                `${leader.name}: You have earned the ${leader.badge}!`,
+                `KAI received the ${leader.badge}!`,
+                `KAI now holds ${this.player.badges.length} badge(s).`
+            ]);
         }
     }
 
@@ -435,10 +506,12 @@ class Game {
     }
     
     startBattle() {
-        const encounters = ['SKYWING', 'SCRATCHCLAW', 'SILKWORM'];
-        const species = encounters[Math.floor(Math.random() * encounters.length)];
+        const area  = this.map.getAreaAt(this.player.x, this.player.y);
+        const table = ENCOUNTER_TABLES[area] || ENCOUNTER_TABLES['fernvale_routes'];
+        const species = table.species[Math.floor(Math.random() * table.species.length)];
+        const level  = table.minLevel + Math.floor(Math.random() * (table.maxLevel - table.minLevel + 1));
         this.state = 'battle';
-        this.battle.startWildBattle(species);
+        this.battle.startWildBattle(species, level);
     }
     
     gameLoop(timestamp) {
@@ -471,8 +544,22 @@ class Game {
             this.map.update();
             this.player.update(this.deltaTime);
             this.processMovementInput();
+
+            // Grass-step wild encounter
+            if (this.player.justCompletedMove) {
+                this.player.justCompletedMove = false;
+                this.checkStepEncounter();
+            }
+
             this.saveSystem.checkAutoSave();
             this.graphics.updateScreenShake(this.deltaTime);
+        }
+    }
+
+    checkStepEncounter() {
+        const tile = this.map.getTile(this.player.x, this.player.y);
+        if (tile === 'tall_grass' && Math.random() < 0.25) {
+            this.startBattle();
         }
     }
     

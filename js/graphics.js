@@ -96,6 +96,30 @@ class GraphicsEngine {
             case 'wall':
                 this.drawWallTile(x, y, ctx);
                 break;
+            case 'tall_grass':
+                this.drawTallGrassTile(x, y, ctx);
+                break;
+            case 'mountain':
+                this.drawMountainTile(x, y, ctx);
+                break;
+            case 'swamp':
+                this.drawSwampTile(x, y, ctx);
+                break;
+            case 'lava':
+                this.drawLavaTile(x, y, ctx);
+                break;
+            case 'heal_center':
+                this.drawHealCenterTile(x, y, ctx);
+                break;
+            case 'gym':
+                this.drawGymTile(x, y, ctx);
+                break;
+            case 'dark_tree':
+                this.drawDarkTreeTile(x, y, ctx);
+                break;
+            case 'ash_ground':
+                this.drawAshGroundTile(x, y, ctx);
+                break;
             default:
                 this.drawDefaultTile(x, y, colors, ctx);
         }
@@ -281,6 +305,136 @@ class GraphicsEngine {
     drawDefaultTile(x, y, colors, ctx) {
         ctx.fillStyle = colors[0];
         ctx.fillRect(x, y, 32, 32);
+    }
+
+    drawTallGrassTile(x, y, ctx) {
+        const s = 32;
+        ctx.fillStyle = '#3a6e3a';
+        ctx.fillRect(x, y, s, s);
+        ctx.fillStyle = '#2e5a2e';
+        ctx.fillRect(x + 3, y + 8, 3, 16);
+        ctx.fillRect(x + 8, y + 4, 3, 20);
+        ctx.fillRect(x + 14, y + 6, 3, 18);
+        ctx.fillRect(x + 20, y + 3, 3, 22);
+        ctx.fillRect(x + 26, y + 7, 3, 17);
+        ctx.fillStyle = '#4a8e4a';
+        ctx.fillRect(x + 4, y + 6, 2, 4);
+        ctx.fillRect(x + 15, y + 4, 2, 4);
+        ctx.fillRect(x + 22, y + 2, 2, 4);
+    }
+
+    drawMountainTile(x, y, ctx) {
+        const s = 32;
+        ctx.fillStyle = '#5a5a6a';
+        ctx.fillRect(x, y, s, s);
+        ctx.fillStyle = '#6a6a7a';
+        ctx.fillRect(x + 4, y + 4, 24, 20);
+        ctx.fillStyle = '#8a8a9a';
+        ctx.fillRect(x + 10, y + 2, 12, 8);
+        ctx.fillRect(x + 6, y + 8, 6, 4);
+        ctx.fillRect(x + 20, y + 10, 6, 4);
+        ctx.fillStyle = '#3a3a4a';
+        ctx.fillRect(x + 2, y + 22, 28, 10);
+        ctx.fillRect(x, y + 28, 32, 4);
+    }
+
+    drawSwampTile(x, y, ctx) {
+        const s = 32;
+        ctx.fillStyle = '#2e3e2e';
+        ctx.fillRect(x, y, s, s);
+        ctx.fillStyle = '#3a4e3a';
+        ctx.fillRect(x + 4, y + 6, 10, 6);
+        ctx.fillRect(x + 18, y + 16, 10, 6);
+        ctx.fillStyle = '#4a6e4a';
+        ctx.fillRect(x + 2, y + 20, 4, 4);
+        ctx.fillRect(x + 24, y + 8, 4, 4);
+        ctx.fillStyle = '#1a2e1a';
+        ctx.fillRect(x + 8, y + 14, 6, 3);
+        ctx.fillRect(x + 20, y + 24, 6, 3);
+    }
+
+    drawLavaTile(x, y, ctx) {
+        const s = 32;
+        const t = Date.now() / 800;
+        ctx.fillStyle = '#3a1a00';
+        ctx.fillRect(x, y, s, s);
+        ctx.fillStyle = '#c04000';
+        ctx.fillRect(x + 4, y + 8, 12, 8);
+        ctx.fillRect(x + 18, y + 18, 10, 6);
+        const glow = Math.sin(t) * 0.3 + 0.7;
+        ctx.fillStyle = `rgba(255,100,0,${glow * 0.8})`;
+        ctx.fillRect(x + 6, y + 10, 8, 4);
+        ctx.fillRect(x + 20, y + 20, 6, 3);
+        ctx.fillStyle = `rgba(255,200,0,${glow * 0.6})`;
+        ctx.fillRect(x + 8, y + 11, 4, 2);
+    }
+
+    drawHealCenterTile(x, y, ctx) {
+        const s = 32;
+        ctx.fillStyle = '#d47a9a';
+        ctx.fillRect(x, y + 8, s, s - 8);
+        ctx.fillStyle = '#e8a0b8';
+        ctx.fillRect(x - 2, y + 4, s + 4, 8);
+        ctx.fillStyle = '#f0d0e0';
+        ctx.fillRect(x + 6, y + 14, 6, 6);
+        ctx.fillRect(x + 20, y + 14, 6, 6);
+        ctx.fillStyle = '#cc2244';
+        ctx.fillRect(x + 13, y + 18, 6, 2);
+        ctx.fillRect(x + 15, y + 16, 2, 6);
+        ctx.fillStyle = '#3a2030';
+        ctx.fillRect(x + 12, y + 22, 8, 10);
+    }
+
+    drawGymTile(x, y, ctx) {
+        const s = 32;
+        ctx.fillStyle = '#4a4a5e';
+        ctx.fillRect(x, y + 8, s, s - 8);
+        ctx.fillStyle = '#5a5a6e';
+        ctx.fillRect(x - 2, y + 4, s + 4, 8);
+        ctx.fillStyle = '#8888aa';
+        ctx.fillRect(x + 6, y + 14, 6, 6);
+        ctx.fillRect(x + 20, y + 14, 6, 6);
+        ctx.fillStyle = '#cccc44';
+        ctx.fillRect(x + 11, y + 11, 10, 2);
+        ctx.fillRect(x + 14, y + 9, 4, 2);
+        ctx.fillStyle = '#2a2a3a';
+        ctx.fillRect(x + 12, y + 22, 8, 10);
+        ctx.fillStyle = '#cccc44';
+        ctx.fillRect(x + 15, y + 24, 2, 2);
+    }
+
+    drawDarkTreeTile(x, y, ctx) {
+        const s = 32;
+        ctx.fillStyle = '#3a2e1e';
+        ctx.fillRect(x + 12, y + 20, 8, 12);
+        ctx.fillStyle = '#1e3a1e';
+        ctx.fillRect(x + 4, y + 8, 24, 20);
+        ctx.fillStyle = '#264a26';
+        ctx.fillRect(x + 6, y + 10, 20, 16);
+        ctx.fillStyle = '#2e5a2e';
+        ctx.fillRect(x + 8, y + 12, 16, 12);
+        ctx.fillStyle = '#3a6e3e';
+        ctx.fillRect(x + 10, y + 14, 4, 4);
+        ctx.fillRect(x + 18, y + 16, 3, 3);
+        ctx.fillStyle = '#1a2a1a';
+        ctx.fillRect(x + 16, y + 13, 2, 2);
+    }
+
+    drawAshGroundTile(x, y, ctx) {
+        const s = 32;
+        ctx.fillStyle = '#5a5a5a';
+        ctx.fillRect(x, y, s, s);
+        ctx.fillStyle = '#6a6a6a';
+        ctx.fillRect(x + 3, y + 4, 3, 3);
+        ctx.fillRect(x + 12, y + 8, 3, 3);
+        ctx.fillRect(x + 22, y + 6, 3, 3);
+        ctx.fillRect(x + 6, y + 18, 3, 3);
+        ctx.fillRect(x + 16, y + 15, 3, 3);
+        ctx.fillRect(x + 25, y + 22, 3, 3);
+        ctx.fillStyle = '#4a4a4a';
+        ctx.fillRect(x + 8, y + 12, 2, 2);
+        ctx.fillRect(x + 20, y + 24, 2, 2);
+        ctx.fillRect(x + 28, y + 14, 2, 2);
     }
     
     // Draw enhanced player sprite

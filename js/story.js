@@ -352,7 +352,309 @@ const NPC_DIALOG = {
                 'Travel with caution.'
             ]
         }
+    ],
+
+    sign_dustway: [
+        {
+            minProgress: 0, maxProgress: 9,
+            dialog: [
+                'DUSTWAY ROUTE',
+                'Tall grass ahead — watch your step.',
+                'MOSSGROVE FOREST lies to the north.',
+                'FERNVALE TOWN lies to the south.'
+            ]
+        }
+    ],
+
+    sign_mirefall: [
+        {
+            minProgress: 0, maxProgress: 9,
+            dialog: [
+                'MIREFALL TOWN',
+                'Population: 120',
+                '"Built on the edge of the marsh."',
+                'GYM LEADER: SYLVA'
+            ]
+        }
+    ],
+
+    sign_thornway: [
+        {
+            minProgress: 0, maxProgress: 9,
+            dialog: [
+                'THORNWAY RIDGE',
+                'Narrow mountain pass ahead.',
+                'Strong creatures reported in the cliffs.',
+                'Proceed with caution.'
+            ]
+        }
+    ],
+
+    sign_cinderholm: [
+        {
+            minProgress: 0, maxProgress: 9,
+            dialog: [
+                'CINDERHOLM CITY',
+                'Population: 800',
+                '"The forge of the north."',
+                'GYM LEADER: CINDER'
+            ]
+        }
+    ],
+
+    sign_ashfall: [
+        {
+            minProgress: 0, maxProgress: 9,
+            dialog: [
+                'ASHFALL PASS',
+                'Volcanic activity detected.',
+                'Do not approach lava fissures.',
+                'VELTARA SUMMIT — beyond this pass.'
+            ]
+        }
+    ],
+
+    sign_summit: [
+        {
+            minProgress: 0, maxProgress: 9,
+            dialog: [
+                'VELTARA SUMMIT',
+                'Restricted area.',
+                'All travellers enter at their own risk.',
+                '...'
+            ]
+        }
+    ],
+
+    // ── Gym Leaders ───────────────────────────────────────
+    gym_brix: [
+        {
+            minProgress: 0, maxProgress: 9,
+            dialog: [
+                'BRIX: So, a challenger walks into my gym.',
+                'BRIX: The name\'s BRIX. Leader of the FERNVALE GYM.',
+                'BRIX: Normal-type creatures, sure. But nothing about this battle will be normal.',
+                'BRIX: Show me what you\'ve got!'
+            ]
+        }
+    ],
+
+    gym_sylva: [
+        {
+            minProgress: 0, maxProgress: 2,
+            dialog: [
+                'SYLVA: A fresh face from the south.',
+                'SYLVA: MIREFALL is a quiet town. We like it that way.',
+                'SYLVA: But the VEIL has been unsettling the marsh creatures.',
+                'SYLVA: If you want my badge, you\'ll have to earn it.',
+                'SYLVA: Prove you can handle what\'s coming.'
+            ]
+        },
+        {
+            minProgress: 3, maxProgress: 9,
+            dialog: [
+                'SYLVA: You\'ve been pushing back against the VEIL.',
+                'SYLVA: I\'ve heard the stories.',
+                'SYLVA: The marsh respects strength and patience both.',
+                'SYLVA: Let\'s see which you have.'
+            ]
+        }
+    ],
+
+    gym_cinder: [
+        {
+            minProgress: 0, maxProgress: 4,
+            dialog: [
+                'CINDER: CINDERHOLM wasn\'t built for the faint of heart.',
+                'CINDER: And neither were my creatures.',
+                'CINDER: The VEIL thinks they own this city.',
+                'CINDER: They\'re wrong. And so is anyone who isn\'t ready for fire.',
+                'CINDER: Come. Let\'s find out if you\'re the real thing.'
+            ]
+        },
+        {
+            minProgress: 5, maxProgress: 9,
+            dialog: [
+                'CINDER: Word travels fast in CINDERHOLM.',
+                'CINDER: They say you\'re KAI. The fallen champion.',
+                'CINDER: I don\'t care about the past. I care about right now.',
+                'CINDER: Prove to me you still burn.'
+            ]
+        }
+    ],
+
+    // ── Route & World NPCs ────────────────────────────────
+    route_trainer_1: [
+        {
+            minProgress: 0, maxProgress: 9,
+            dialog: [
+                'HIKER RUDO: Hold on, traveller!',
+                'HIKER RUDO: I\'ve been patrolling this route for weeks.',
+                'HIKER RUDO: Something\'s wrong in MOSSGROVE. Creatures acting strange.',
+                'HIKER RUDO: My team and I are keeping watch. Stay sharp.'
+            ]
+        }
+    ],
+
+    veil_patrol: [
+        {
+            minProgress: 0, maxProgress: 2,
+            dialog: [
+                'VEIL GRUNT: Halt! This forest belongs to THE VEIL.',
+                'VEIL GRUNT: Turn back now or face the consequences.',
+                '[VEIL GRUNT wants to battle!]'
+            ]
+        },
+        {
+            minProgress: 3, maxProgress: 9,
+            dialog: [
+                'VEIL GRUNT: ...You again.',
+                'VEIL GRUNT: You\'ve cost us everything in this forest.',
+                'VEIL GRUNT: Commander VOSS will hear about this.'
+            ]
+        }
+    ],
+
+    townsperson_3: [
+        {
+            minProgress: 0, maxProgress: 3,
+            dialog: [
+                'FISHER: MIREFALL used to be peaceful.',
+                'FISHER: Now THE VEIL has men on the docks at night.',
+                'FISHER: I don\'t dare cast a line after dark anymore.'
+            ]
+        },
+        {
+            minProgress: 4, maxProgress: 9,
+            dialog: [
+                'FISHER: Things have been quieter since you arrived.',
+                'FISHER: The VEIL pulled back from the docks.',
+                'FISHER: I don\'t know who you are, but thank you.'
+            ]
+        }
+    ],
+
+    townsperson_4: [
+        {
+            minProgress: 0, maxProgress: 5,
+            dialog: [
+                'WORKER: CINDERHOLM runs on fire and iron.',
+                'WORKER: The forge has been cold for weeks — the VEIL controls the fuel supply.',
+                'WORKER: If someone could cut off their operation up north...',
+                'WORKER: ...the whole city would owe them one.'
+            ]
+        },
+        {
+            minProgress: 6, maxProgress: 9,
+            dialog: [
+                'WORKER: The forge is running again!',
+                'WORKER: I heard it was you who broke the VEIL\'s hold on the pass.',
+                'WORKER: CINDERHOLM won\'t forget this.'
+            ]
+        }
+    ],
+
+    veil_grunt: [
+        {
+            minProgress: 0, maxProgress: 3,
+            dialog: [
+                'VEIL GRUNT: You shouldn\'t be here.',
+                'VEIL GRUNT: THE VEIL will reclaim this region.',
+                'VEIL GRUNT: Commander VOSS has plans for MIREFALL.',
+                '[VEIL GRUNT wants to battle!]'
+            ]
+        },
+        {
+            minProgress: 4, maxProgress: 9,
+            dialog: [
+                'VEIL GRUNT: ...Commander VOSS has abandoned this post.',
+                'VEIL GRUNT: I don\'t even know why I\'m still here.',
+                'VEIL GRUNT: Just... leave me alone.'
+            ]
+        }
+    ],
+
+    veil_commander: [
+        {
+            minProgress: 0, maxProgress: 4,
+            dialog: [
+                'VEIL COMMANDER: So you\'re the one causing disruptions.',
+                'VEIL COMMANDER: Impressive, for a nobody.',
+                'VEIL COMMANDER: But MIRA\'s plan is already in motion.',
+                'VEIL COMMANDER: You\'re too late.',
+                '[COMMANDER wants to battle!]'
+            ]
+        },
+        {
+            minProgress: 5, maxProgress: 9,
+            dialog: [
+                'VEIL COMMANDER: ...MIRA underestimated you.',
+                'VEIL COMMANDER: I won\'t make that mistake.',
+                'VEIL COMMANDER: This isn\'t over.'
+            ]
+        }
+    ],
+
+    mira: [
+        {
+            minProgress: 0, maxProgress: 7,
+            dialog: [
+                'MIRA: ...',
+                'MIRA: You finally came.',
+                'MIRA: I wondered how long it would take.',
+                'MIRA: Do you even know what you\'re fighting for, KAI?',
+                'MIRA: Or are you still running from what happened?'
+            ]
+        },
+        {
+            minProgress: 8, maxProgress: 9,
+            dialog: [
+                'MIRA: You\'ve earned this moment.',
+                'MIRA: I\'ve been waiting for a challenger worthy of the truth.',
+                'MIRA: Everything ends here, KAI.',
+                'MIRA: Let\'s finish this.',
+                '[MIRA wants to battle!]'
+            ]
+        }
     ]
+};
+
+// ============================================
+// GYM LEADERS
+// ============================================
+const GYM_LEADERS = {
+    gym_brix: {
+        name: 'BRIX',
+        title: 'Fernvale Gym Leader',
+        type: 'normal',
+        badge: 'Stone Badge',
+        party: [
+            { species: 'SCRATCHCLAW', level: 9 },
+            { species: 'SKYWING',     level: 10 }
+        ]
+    },
+    gym_sylva: {
+        name: 'SYLVA',
+        title: 'Mirefall Gym Leader',
+        type: 'grass',
+        badge: 'Marsh Badge',
+        party: [
+            { species: 'SILKWORM',     level: 20 },
+            { species: 'LEAFLING',     level: 22 },
+            { species: 'GROVEGUARDIAN', level: 24 }
+        ]
+    },
+    gym_cinder: {
+        name: 'CINDER',
+        title: 'Cinderholm Gym Leader',
+        type: 'fire',
+        badge: 'Ember Badge',
+        party: [
+            { species: 'EMBERL',      level: 35 },
+            { species: 'BLAZECLAW',   level: 38 },
+            { species: 'INFERNOBEAST', level: 42 }
+        ]
+    }
 };
 
 // ============================================
@@ -473,7 +775,7 @@ function getMemoryDialog(progress) {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         GAME_TITLE, PLAYER_NAME, REGION_NAME,
-        INTRO_SEQUENCE, NPC_DIALOG, STORY_EVENTS,
+        INTRO_SEQUENCE, NPC_DIALOG, STORY_EVENTS, GYM_LEADERS,
         getDialog, getStoryEvent, getMemoryDialog
     };
 }
