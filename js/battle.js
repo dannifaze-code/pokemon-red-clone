@@ -681,6 +681,10 @@ class BattleSystem {
         }
         
         this.game.state = 'world';
+
+        // Clear any held movement keys so the player doesn't get stuck walking
+        this.game.pressedDirections.clear();
+        this.game.lastDirectionPressed = null;
         
         // Clear battle UI
         this.message = '';
