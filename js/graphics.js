@@ -34,9 +34,12 @@ class GraphicsEngine {
         this.playerSpriteSheet = new Image();
         this.playerSpriteLoaded = false;
         this.playerSpriteFailed = false;
+        this.playerSpriteFrames = null;
+        this.playerSpriteMode = 'direct';
         this.playerSpriteSheet.src = 'assets/mainplayablespriteset.png';
         this.playerSpriteSheet.onload = () => {
             this.playerSpriteLoaded = true;
+            this.preparePlayerSpriteFrames();
         };
         this.playerSpriteSheet.onerror = () => {
             this.playerSpriteFailed = true;
@@ -457,18 +460,130 @@ class GraphicsEngine {
             return;
         }
 
-        const sheet = this.playerSpriteSheet;
-        const frameW = Math.floor(sheet.width / 4);
-        const frameH = Math.floor(sheet.height / 4);
         const frameCol = player.isMoving ? (player.walkFrame % 4) : 0;
         const frameRow = this.getPlayerSpriteRow(player.direction);
-        const srcX = frameCol * frameW;
-        const srcY = frameRow * frameH;
 
         const prevSmoothing = ctx.imageSmoothingEnabled;
         ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(sheet, srcX, srcY, frameW, frameH, x, y, destSize, destSize);
+        if (this.playerSpriteMode === 'embedded' && this.playerSpriteFrames) {
+            const frame = this.playerSpriteFrames[frameRow][frameCol];
+            ctx.drawImage(frame, x, y, destSize, destSize);
+        } else {
+            const sheet = this.playerSpriteSheet;
+            const frameW = Math.floor(sheet.width / 4);
+            const frameH = Math.floor(sheet.height / 4);
+            const srcX = frameCol * frameW;
+            const srcY = frameRow * frameH;
+            ctx.drawImage(sheet, srcX, srcY, frameW, frameH, x, y, destSize, destSize);
+        }
         ctx.imageSmoothingEnabled = prevSmoothing;
+    }
+
+    preparePlayerSpriteFrames() {
+        const sheet = this.playerSpriteSheet;
+        const aspect = sheet.width / sheet.height;
+
+        if (aspect > 0.9 && aspect < 1.1) {
+            this.playerSpriteMode = 'direct';
+            this.playerSpriteFrames = null;
+            return;
+        }
+
+        this.playerSpriteMode = 'embedded';
+        this.playerSpriteFrames = this.extractEmbeddedSpriteGrid(sheet);
+    }
+
+    extractEmbeddedSpriteGrid(sheet) {
+        const gridX = Math.floor(sheet.width * 0.27);
+        const gridY = Math.floor(sheet.height * 0.03);
+        const gridW = Math.floor(sheet.width * 0.665);
+        const gridH = Math.floor(sheet.height * 0.855);
+        const cellW = Math.floor(gridW / 4);
+        const cellH = Math.floor(gridH / 4);
+
+        const srcCanvas = document.createElement('canvas');
+        srcCanvas.width = sheet.width;
+        srcCanvas.height = sheet.height;
+        const srcCtx = srcCanvas.getContext('2d');
+        srcCtx.imageSmoothingEnabled = false;
+        srcCtx.drawImage(sheet, 0, 0);
+
+        const frames = [];
+        for (let row = 0; row < 4; row++) {
+            const frameRow = [];
+            for (let col = 0; col < 4; col++) {
+                const sx = gridX + col * cellW;
+                const sy = gridY + row * cellH;
+                frameRow.push(this.extractFrameFromCell(srcCtx, sx, sy, cellW, cellH));
+            }
+            frames.push(frameRow);
+        }
+
+        return frames;
+    }
+
+    extractFrameFromCell(srcCtx, sx, sy, sw, sh) {
+        const cellData = srcCtx.getImageData(sx, sy, sw, sh);
+        const data = cellData.data;
+
+        const bgR = data[0];
+        const bgG = data[1];
+        const bgB = data[2];
+
+        let minX = sw;
+        let minY = sh;
+        let maxX = -1;
+        let maxY = -1;
+
+        for (let y = 0; y < sh; y++) {
+            for (let x = 0; x < sw; x++) {
+                const i = (y * sw + x) * 4;
+                const a = data[i + 3];
+                if (a === 0) continue;
+
+                const dr = Math.abs(data[i] - bgR);
+                const dg = Math.abs(data[i + 1] - bgG);
+                const db = Math.abs(data[i + 2] - bgB);
+                const dist = dr + dg + db;
+
+                if (dist < 42) {
+                    data[i + 3] = 0;
+                    continue;
+                }
+
+                if (x < minX) minX = x;
+                if (y < minY) minY = y;
+                if (x > maxX) maxX = x;
+                if (y > maxY) maxY = y;
+            }
+        }
+
+        const cleanedCanvas = document.createElement('canvas');
+        cleanedCanvas.width = sw;
+        cleanedCanvas.height = sh;
+        const cleanedCtx = cleanedCanvas.getContext('2d');
+        cleanedCtx.putImageData(cellData, 0, 0);
+
+        const out = document.createElement('canvas');
+        out.width = 32;
+        out.height = 32;
+        const outCtx = out.getContext('2d');
+        outCtx.imageSmoothingEnabled = false;
+
+        if (maxX < minX || maxY < minY) {
+            return out;
+        }
+
+        const trimW = maxX - minX + 1;
+        const trimH = maxY - minY + 1;
+        const scale = Math.min(26 / trimW, 30 / trimH);
+        const drawW = Math.max(1, Math.round(trimW * scale));
+        const drawH = Math.max(1, Math.round(trimH * scale));
+        const dx = Math.floor((32 - drawW) / 2);
+        const dy = 32 - drawH;
+
+        outCtx.drawImage(cleanedCanvas, minX, minY, trimW, trimH, dx, dy, drawW, drawH);
+        return out;
     }
 
     getPlayerSpriteRow(direction) {
