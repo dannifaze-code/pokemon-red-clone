@@ -481,16 +481,23 @@ class GraphicsEngine {
 
     preparePlayerSpriteFrames() {
         const sheet = this.playerSpriteSheet;
+        console.log('Preparing sprite frames, dimensions:', sheet.width, 'x', sheet.height);
+        
         const aspect = sheet.width / sheet.height;
+        console.log('Aspect ratio:', aspect);
 
-        if (aspect > 0.9 && aspect < 1.1) {
+        // If it's a clean 1:1 sprite sheet, use direct mode
+        if (aspect > 0.95 && aspect < 1.05 && sheet.width >= 128) {
+            console.log('Using direct 4x4 mode');
             this.playerSpriteMode = 'direct';
             this.playerSpriteFrames = null;
             return;
         }
 
+        console.log('Using embedded extraction mode');
         this.playerSpriteMode = 'embedded';
         this.playerSpriteFrames = this.extractEmbeddedSpriteGrid(sheet);
+        console.log('Extracted frames:', this.playerSpriteFrames ? 'success' : 'failed');
     }
 
     extractEmbeddedSpriteGrid(sheet) {
